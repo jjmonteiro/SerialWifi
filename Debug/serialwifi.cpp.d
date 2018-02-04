@@ -43,5 +43,6 @@ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\seri
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.0.0\libraries\ESP8266WiFi\src/include/ssl.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.0.0\libraries\ESP8266WebServer\src/ESP8266WebServer.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.0.0\libraries\ESP8266WebServer\src/detail/RequestHandler.h \
+ C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.0.0\libraries\EEPROM/EEPROM.h \
  C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\webpage.h \
  C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\FIFO.h

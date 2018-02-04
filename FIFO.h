@@ -1,7 +1,6 @@
-
-#define MAX_LINES 10
-#define MAX_CHARS 200
-
+/*****************************************************************************/
+/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
+/*****************************************************************************/
 
 typedef struct {
 	char BUFFER[MAX_LINES][MAX_CHARS];
@@ -39,10 +38,11 @@ typedef struct {
 
 		if (fullLOG)
 			for (int n = nextLine; n < MAX_LINES; n++)
-				SavedData += String(BUFFER[n]);
+					SavedData += String(BUFFER[n]);
 
+		
 			for (int n = 0; n < nextLine; n++)
-				SavedData += String(BUFFER[n]);
+					SavedData += String(BUFFER[n]);
 
 	}
 
@@ -52,8 +52,7 @@ typedef struct {
 	void WriteLine (String NewData) {
 		Serial.println("Buffer PrintLine Call");
 
-
-		NewData.toCharArray(BUFFER[nextLine],MAX_CHARS);
+		(String(millis()) + ": " + NewData).toCharArray(BUFFER[nextLine],MAX_CHARS);
 
 		nextLine++;
 
