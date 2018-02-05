@@ -6,8 +6,11 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define MAX_LINES 40
+#define MAX_LINES 60
 #define MAX_CHARS 100
+#define EEPROM_SIZE 512		//Size can be anywhere between 4 and 4096 bytes
+#define ROM_BANK_SIZE 40	//bytes
+#define SERIAL_TIMEOUT 1000 //ms
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -16,8 +19,6 @@
 #include "webpage.h"
 #include "FIFO.h"
 
-
-
 const char* wifiSSID	 = "(-_-)";
 const char* wifiPassword = "monteiro";
 const char* hostName	 = "serialwifi";
@@ -25,15 +26,13 @@ const char* hostName	 = "serialwifi";
 char ipAddress		[16];  //192.168.111.111
 char freeHeap		[5];
 char powerSupply	[5];
-char emailAddress	[25];
-char faultCommand	[15];
+char emailAddress	[ROM_BANK_SIZE];
+char faultCommand	[ROM_BANK_SIZE];
 
 FIFO dataBuffer;
 
-
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
-
 
 
 void handleNotFound() {
@@ -61,10 +60,10 @@ void handleRoot() {
 			String((float)ESP.getVcc() / KB) + "V</p>" +
 			"<p>Configurations</p>" +
 			"<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>" +
-			"<input class='textbox border' type='email' placeholder='Email Address' maxlength='20' name='text1' value='" + 
-			emailAddress + "' required>" +
-			"<input class='textbox border' type='text' pattern='[0-9a-fA-F]{4,8}' placeholder='Hex Command' maxlength='10' name='text2' value='" + 
-			faultCommand + "' required>" +
+			"<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='" + 
+			String(emailAddress) + "' required>" +
+			"<input class='textbox border' type='text' pattern='[0-9a-fA-F]{4,8}' placeholder='Hex Command' maxlength='15' name='text2' value='" + 
+			String(faultCommand) + "' required>" +
 			"<input class='textbox border' type='submit' value='Save' name='click1'>" +
 			"</form>" +
 			"</nav>" +
@@ -88,36 +87,74 @@ void handleRoot() {
 }
 
 void handleSave() {
-	server.arg("text1").toCharArray(emailAddress,25);
-	server.arg("text2").toCharArray(faultCommand,15);
-	Serial.println("Saving server data..");
+	server.arg("text1").toCharArray(emailAddress, sizeof(emailAddress));
+	server.arg("text2").toCharArray(faultCommand, sizeof(faultCommand));
 
+	Serial.println("Saving server data..");
 	Serial.println("email:" + String(emailAddress));
 	Serial.println("command:" + String(faultCommand));
-	//save values to ROM;
+	//save values to ROM;	
+	writeEeprom(emailAddress, 1);
+	writeEeprom(faultCommand, 2);
+
 
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
 
-	delay(300);
-	ESP.restart();
+
+	//ESP.restart();
+}
+
+void writeEeprom(char* NewData, int BankNumber) {
+
+	Serial.println("Writting to EEPROM");
+	BankNumber *= ROM_BANK_SIZE;
+
+	for (int i = 0; i < ROM_BANK_SIZE; i++) {
+		EEPROM.write(BankNumber + i, NewData[i]);
+		Serial.print(char(NewData[i]));
+	}
+
+	Serial.println();
+	EEPROM.commit();
+	//EEPROM.end();
+}
+
+void readEeprom(char* NewData, int BankNumber) {
+
+	Serial.println("Reading from EEPROM");
+	BankNumber *= ROM_BANK_SIZE;
+
+	for (int i = 0; i < ROM_BANK_SIZE; i++){
+		NewData[i] = EEPROM.read(BankNumber + i);
+		Serial.print(char(NewData[i]));
+	}
+
+	Serial.println();
+	//EEPROM.end();
 }
 
 void setup(void) {
 
+	Serial.setTimeout(SERIAL_TIMEOUT);
 	Serial.begin(SERIAL_BAUDRATE);
+	EEPROM.begin(EEPROM_SIZE);
+
+	readEeprom(emailAddress, 1);
+	readEeprom(faultCommand, 2);
+
 	WiFi.hostname(hostName);
 	WiFi.begin(wifiSSID, wifiPassword);
 
 	Serial.println();
 	// Wait for connection
 	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
+		delay(200);
 		Serial.print(".");
 	}
 
 	 
-	WiFi.localIP().toString().toCharArray(ipAddress,16);
+	WiFi.localIP().toString().toCharArray(ipAddress, sizeof(ipAddress));
 	dataBuffer.Init();
 
 	Serial.print("Connected to ");
