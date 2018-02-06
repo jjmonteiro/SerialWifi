@@ -113,6 +113,8 @@ void writeEeprom(char* NewData, int BankNumber) {
 	for (int i = 0; i < ROM_BANK_SIZE; i++) {
 		EEPROM.write(BankNumber + i, NewData[i]);
 		Serial.print(char(NewData[i]));
+		
+		if (NewData[i] == '\0') return;
 	}
 
 	Serial.println();
@@ -128,6 +130,8 @@ void readEeprom(char* NewData, int BankNumber) {
 	for (int i = 0; i < ROM_BANK_SIZE; i++){
 		NewData[i] = EEPROM.read(BankNumber + i);
 		Serial.print(char(NewData[i]));
+
+		if (NewData[i] == '\0') return;
 	}
 
 	Serial.println();
