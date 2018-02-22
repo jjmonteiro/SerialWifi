@@ -36,14 +36,15 @@ typedef struct {
 		
 		SavedData = "";
 
-		if (fullLOG)
+		if (fullLOG == true) {
 			for (int n = nextLine; n < MAX_LINES; n++)
-					SavedData += String(BUFFER[n]);
+				SavedData += BUFFER[n];
+		}
 
-		
-			for (int n = 0; n < nextLine; n++)
-					SavedData += String(BUFFER[n]);
-
+		if (nextLine != 0) {
+			for (int m = 0; m < nextLine; m++)
+				SavedData += BUFFER[m];
+		}
 	}
 
 /*****************************************************************************/

@@ -6,10 +6,10 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define MAX_LINES 60
+#define MAX_LINES 70		//40*100 = 4KB
 #define MAX_CHARS 100
-#define EEPROM_SIZE 512		//Size can be anywhere between 4 and 4096 bytes
-#define ROM_BANK_SIZE 40	//bytes
+#define EEPROM_SIZE 256		//Size can be anywhere between 4 and 4096 bytes
+#define ROM_BANK_SIZE 30	//chars = bytes
 #define SERIAL_TIMEOUT 1000 //ms
 
 #include <Arduino.h>
@@ -23,13 +23,14 @@ const char* wifiSSID	 = "(-_-)";
 const char* wifiPassword = "monteiro";
 const char* hostName	 = "serialwifi";
 
-char ipAddress		[16];  //192.168.111.111
-char freeHeap		[5];
-char powerSupply	[5];
 char emailAddress	[ROM_BANK_SIZE];
 char faultCommand	[ROM_BANK_SIZE];
 
 FIFO dataBuffer;
+String tmpBuffer;
+String ipAddress;
+String freeHeap;
+String powerSupply;
 
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
@@ -41,62 +42,63 @@ void handleNotFound() {
 }
 
 void handleRoot() {
-	String tmpBuffer;
-	String Index_2;
 
-	Serial.println("Handling request: index");
+	Serial.println("Handling request: index..");
 
 	dataBuffer.ReadAll(tmpBuffer);
+	freeHeap = String((float)ESP.getFreeHeap() / KB);
+	powerSupply = String((float)ESP.getVcc() / KB);
+	Serial.println("Strings populated.");
 
+	// get static webpage part residing in flash memory
 	FPSTR(Index_1);
+	Serial.println("Index_1 retrieved.");
+	//changeable webpage parts
+	String Index_2 =
+				"Network SSID: " +
+				String(wifiSSID) + "<br>" +
+				"IP Address: " +
+				ipAddress + "<br>" +
+				"Free Memory: " +
+				freeHeap + "Kb<br>" +
+				"Battery: " +
+				powerSupply + "V</p>" +
+				"<p>Configurations</p>" +
+				"<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>" +
+				"<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='" +
+				String(emailAddress) + "' required>" +
+				"<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='40' name='text2' value='" +
+				String(faultCommand) + "' required>" +
+				"<input class='textbox border' type='submit' value='Save' name='click1'>" +
+				"</form>" +
+				"</nav>" +
+				"<!---RIGHT PANEL--->" +
+				"<article class='article'>" +
+				"<p>Buffer Ascii Data</p>" +
+				"<textarea class='border' readonly>" +
+				tmpBuffer + "</textarea>" +
+				"</article>" +
+				"<footer>Copyright &copy; 2018 Joaquim Monteiro</footer>" +
+				"</div>" + "</body>" + "</html>";
+	
+	Serial.println("Index_2 constructed.");
+	Serial.println("Sending request..");
 
-	Index_2 = "Network SSID: " + 
-			String(wifiSSID) + "<br>" +
-			"IP Address: " + 
-			ipAddress + "<br>" +
-			"Free Memory: " + 
-			String((float)ESP.getFreeHeap() / KB) + "Kb<br>" +
-			"Battery: " + 
-			String((float)ESP.getVcc() / KB) + "V</p>" +
-			"<p>Configurations</p>" +
-			"<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>" +
-			"<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='" + 
-			String(emailAddress) + "' required>" +
-			"<input class='textbox border' type='text' pattern='[0-9a-fA-F]{4,8}' placeholder='Hex Command' maxlength='15' name='text2' value='" + 
-			String(faultCommand) + "' required>" +
-			"<input class='textbox border' type='submit' value='Save' name='click1'>" +
-			"</form>" +
-			"</nav>" +
-			"<!---RIGHT PANEL--->" +
-			"<article class='article'>" +
-			"<p>Buffer Ascii Data</p>" +
-			"<textarea class='border' readonly>" + 
-			tmpBuffer +
-			"</textarea>" +
-			"</article>" +
-			"<article class='article'>" +
-			"<p>Buffer Byte Data</p>" +
-			"<textarea class='border' readonly>" + 
-			tmpBuffer +
-			"</textarea>" +
-			"</article>" +
-			"<footer>Copyright &copy; 2018</footer>" +
-			"</div>" + "</body>" + "</html>";
-
-	server.send(200, "text/html",  Index_1 + Index_2);
+	server.send(200, "text/html", (Index_1 + Index_2));
+	Serial.println("Request sent!");
 }
 
 void handleSave() {
-	server.arg("text1").toCharArray(emailAddress, sizeof(emailAddress));
-	server.arg("text2").toCharArray(faultCommand, sizeof(faultCommand));
+	server.arg("text1").toCharArray(emailAddress, ROM_BANK_SIZE);
+	server.arg("text2").toCharArray(faultCommand, ROM_BANK_SIZE);
 
 	Serial.println("Saving server data..");
 	Serial.println("email:" + String(emailAddress));
 	Serial.println("command:" + String(faultCommand));
-	//save values to ROM;	
+	
+	//save values to EEPROM;	
 	writeEeprom(emailAddress, 1);
 	writeEeprom(faultCommand, 2);
-
 
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
@@ -114,12 +116,12 @@ void writeEeprom(char* NewData, int BankNumber) {
 		EEPROM.write(BankNumber + i, NewData[i]);
 		Serial.print(char(NewData[i]));
 		
-		if (NewData[i] == '\0') return;
+		if (NewData[i] == 0) break;
 	}
 
-	Serial.println();
 	EEPROM.commit();
-	//EEPROM.end();
+	Serial.println();
+	Serial.println("Done writting.");
 }
 
 void readEeprom(char* NewData, int BankNumber) {
@@ -131,50 +133,61 @@ void readEeprom(char* NewData, int BankNumber) {
 		NewData[i] = EEPROM.read(BankNumber + i);
 		Serial.print(char(NewData[i]));
 
-		if (NewData[i] == '\0') return;
+		if (NewData[i] == 0) break;
 	}
 
 	Serial.println();
-	//EEPROM.end();
+	Serial.println("Done reading.");
 }
 
 void setup(void) {
-
 	Serial.setTimeout(SERIAL_TIMEOUT);
 	Serial.begin(SERIAL_BAUDRATE);
-	EEPROM.begin(EEPROM_SIZE);
+	Serial.println();
+	Serial.println("=== uP Restart ===");
+	Serial.print("Serial Init. Baudrate: ");
+	Serial.println(SERIAL_BAUDRATE);
 
+	EEPROM.begin(EEPROM_SIZE);
+	Serial.print("Eeprom Conf. Size: ");
+	Serial.println(EEPROM_SIZE);
+
+	Serial.println("Reading Eeprom data..");
 	readEeprom(emailAddress, 1);
 	readEeprom(faultCommand, 2);
 
+	Serial.println("Bank 1:" + String(emailAddress));
+	Serial.println("Bank 2:" + String(faultCommand));
+
+
+	Serial.println("Network Init..");
 	WiFi.hostname(hostName);
-	WiFi.begin(wifiSSID, wifiPassword);
-
-	Serial.println();
-	// Wait for connection
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(200);
-		Serial.print(".");
-	}
-
-	 
-	WiFi.localIP().toString().toCharArray(ipAddress, sizeof(ipAddress));
-	dataBuffer.Init();
-
-	Serial.print("Connected to ");
-	Serial.println(wifiSSID);
-	Serial.print("IP address: ");
-	Serial.println(ipAddress);
 	Serial.print("Netbios: ");
 	Serial.println(hostName);
 
+	WiFi.begin(wifiSSID, wifiPassword);
+	Serial.print("Connecting to: ");
+	Serial.println(wifiSSID);
+
+	// Wait for connection
+	while (WiFi.status() != WL_CONNECTED) {
+		delay(500);
+		Serial.print(".");
+	}
+	Serial.println();
+	Serial.println("Connected!");
+	ipAddress = WiFi.localIP().toString();
+
+	dataBuffer.Init();
+	Serial.print("IP address: ");
+	Serial.println(ipAddress);
 
 	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
 	server.on("/", HTTP_POST, handleSave); // when client saves changes
 	server.onNotFound(handleNotFound);     // When client requests an unknown webpage
 
 	server.begin();
-	Serial.println("HTTP server started");
+	Serial.println("HTTP server started.");
 }
 
 void loop(void) {
@@ -184,5 +197,5 @@ void loop(void) {
 		Serial.println("Data received, line: " + String(dataBuffer.nextLine));
 		dataBuffer.WriteLine(Serial.readString());
 	}
-
+	delay(300);
 }
