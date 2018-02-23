@@ -12,8 +12,8 @@
 
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
-#define __ESP8266_ESp8266__
-#define __ESP8266_ESP8266__
+#define __AVR_ESp8266__
+#define __AVR_ESP8266__
 #define __ets__
 #define ICACHE_FLASH
 #define F_CPU 80000000L
@@ -90,7 +90,7 @@ typedef long __PTRDIFF_TYPE__;
 #include "Esp.h"
 
 
-#include <Arduino.h>
+#include <arduino.h>
 #include <pins_arduino.h> 
 
 #include "..\generic\Common.h"

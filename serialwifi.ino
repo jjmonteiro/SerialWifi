@@ -3,14 +3,14 @@
 /*  EEPROM implementation test
 /*****************************************************************************/
 
-#define KB		 1024
-#define PORT	 80
-#define SERIAL_BAUDRATE 115200
-#define MAX_LINES 70		//40*100 = 4KB
-#define MAX_CHARS 100
-#define EEPROM_SIZE 256		//Size can be anywhere between 4 and 4096 bytes
-#define ROM_BANK_SIZE 30	//chars = bytes
-#define SERIAL_TIMEOUT 1000 //ms
+extern const unsigned int  KB              = 1024;
+extern const unsigned int  PORT            = 80;
+extern const unsigned int  SERIAL_BAUDRATE = 115200;
+extern const unsigned int  MAX_LINES       = 70;	//40*100 = 4KB
+#define MAX_CHARS       100
+#define EEPROM_SIZE     256		//Size can be anywhere between 4 and 4096 bytes
+#define ROM_BANK_SIZE   30	//chars = bytes
+#define SERIAL_TIMEOUT  1000 //ms
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -18,34 +18,56 @@
 #include <EEPROM.h>
 #include "webpage.h"
 #include "FIFO.h"
+#include "FIFO.h"
+#include "ES8266Server.h"
 
 const char* wifiSSID	 = "(-_-)";
 const char* wifiPassword = "monteiro";
 const char* hostName	 = "serialwifi";
 
+
 char emailAddress	[ROM_BANK_SIZE];
 char faultCommand	[ROM_BANK_SIZE];
 
-FIFO dataBuffer;
+MemoryBuffer  dataBuffer;
 String tmpBuffer;
 String ipAddress;
 String freeHeap;
 String powerSupply;
 
 ADC_MODE(ADC_VCC);
+
+enum ServerType
+{
+	MOCK,
+	ESH
+};
+IDeviceServer * CreateServer(ServerType Type)
+{
+	switch (Type)
+	{
+	case MOCK:
+		return new MockServerServer();
+	default:
+		return new ESP8266WebServer();
+	}
+}
+IDeviceServer& PortalServer = (* CreateServer(ESH));
+
 ESP8266WebServer server(PORT);
 
 
 void handleNotFound() {
 	Serial.println("Handling request: Not found");
-	server.send(404, "text/plain", "404: Not found");
+	PortalServer.Send("404: Not found", "text/plain", 404);
+
 }
 
 void handleRoot() {
 
 	Serial.println("Handling request: index..");
 
-	dataBuffer.ReadAll(tmpBuffer);
+	dataBuffer.ReadStringFromBuffer(tmpBuffer);
 	freeHeap = String((float)ESP.getFreeHeap() / KB);
 	powerSupply = String((float)ESP.getVcc() / KB);
 	Serial.println("Strings populated.");
@@ -179,7 +201,7 @@ void setup(void) {
 	Serial.println("Connected!");
 	ipAddress = WiFi.localIP().toString();
 
-	dataBuffer.Init();
+
 	Serial.print("IP address: ");
 	Serial.println(ipAddress);
 
@@ -195,8 +217,8 @@ void loop(void) {
 	server.handleClient();
 
 	if (Serial.available()){
-		Serial.println("Data received, line: " + String(dataBuffer.nextLine));
-		dataBuffer.WriteLine(Serial.readString());
+		Serial.println("Data received, line: " + String(dataBuffer.GetCurrentPosition()));
+		dataBuffer.WriteStringToBuffer(Serial.readString());
 	}
 	delay(300);
 }
