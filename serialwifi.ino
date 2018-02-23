@@ -85,6 +85,7 @@ void handleRoot() {
 	Serial.println("Sending request..");
 
 	server.send(200, "text/html", (Index_1 + Index_2));
+	tmpBuffer = "";
 	Serial.println("Request sent!");
 }
 

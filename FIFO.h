@@ -34,17 +34,25 @@ typedef struct {
 	void ReadAll (String &SavedData) {
 		Serial.println("Buffer ReadAll Call");
 		
-		SavedData = "";
+		//SavedData = "";
+		Serial.println("SavedData cleared");
+		Serial.print("FullLOG: "); Serial.println(fullLOG);
+		Serial.print("nextLine: "); Serial.println(nextLine);
 
 		if (fullLOG == true) {
-			for (int n = nextLine; n < MAX_LINES; n++)
+			for (int n = nextLine; n < MAX_LINES; n++) {
 				SavedData += BUFFER[n];
+				Serial.print(n, DEC);
+			}
 		}
-
+		Serial.println("SavedData 2nd Stage");
 		if (nextLine != 0) {
-			for (int m = 0; m < nextLine; m++)
+			for (int m = 0; m < nextLine; m++){
 				SavedData += BUFFER[m];
+				Serial.print(m, DEC);
+			}
 		}
+		Serial.println("SavedData complete!");
 	}
 
 /*****************************************************************************/
