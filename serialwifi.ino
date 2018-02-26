@@ -8,7 +8,7 @@
 #define SERIAL_BAUDRATE 115200
 #define MAX_LINES 70		//40*100 = 4KB
 #define MAX_CHARS 100
-#define EEPROM_SIZE 256		//Size can be anywhere between 4 and 4096 bytes
+#define EEPROM_SIZE 330		//Size can be anywhere between 4 and 4096 bytes
 #define ROM_BANK_SIZE 30	//chars = bytes
 #define SERIAL_TIMEOUT 1000 //ms
 
@@ -23,39 +23,38 @@ const char* wifiSSID	 = "(-_-)";
 const char* wifiPassword = "monteiro";
 const char* hostName	 = "serialwifi";
 
-char emailAddress	[ROM_BANK_SIZE];
-char faultCommand	[ROM_BANK_SIZE];
+String emailAddress;
+String faultCommand;
 
-FIFO dataBuffer;
-String tmpBuffer;
+MemoryBuffer dataBuffer;
+
 String ipAddress;
 String freeHeap;
 String powerSupply;
+String Index;
+String tmpBuffer;
 
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
 
 
-void handleNotFound() {
-	Serial.println("Handling request: Not found");
-	server.send(404, "text/plain", "404: Not found");
-}
+
 
 void handleRoot() {
 
-	Serial.println("Handling request: index..");
 
-	dataBuffer.ReadAll(tmpBuffer);
-	freeHeap = String((float)ESP.getFreeHeap() / KB);
-	powerSupply = String((float)ESP.getVcc() / KB);
-	Serial.println("Strings populated.");
+	Serial.println("Handling request: index..");
+	tmpBuffer = dataBuffer.ReadStringFromBuffer();
+	Serial.println("Buffer retrieved.");
 
 	// get static webpage part residing in flash memory
-	FPSTR(Index_1);
+	FPSTR(http);
+
 	Serial.println("Index_1 retrieved.");
 	//changeable webpage parts
-	String Index_2 =
-				"Network SSID: " +
+	
+	Index = 
+				("Network SSID: " +
 				String(wifiSSID) + "<br>" +
 				"IP Address: " +
 				ipAddress + "<br>" +
@@ -66,9 +65,9 @@ void handleRoot() {
 				"<p>Configurations</p>" +
 				"<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>" +
 				"<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='" +
-				String(emailAddress) + "' required>" +
+				emailAddress + "' required>" +
 				"<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='40' name='text2' value='" +
-				String(faultCommand) + "' required>" +
+				faultCommand + "' required>" +
 				"<input class='textbox border' type='submit' value='Save' name='click1'>" +
 				"</form>" +
 				"</nav>" +
@@ -79,27 +78,25 @@ void handleRoot() {
 				tmpBuffer + "</textarea>" +
 				"</article>" +
 				"<footer>Copyright &copy; 2018 Joaquim Monteiro</footer>" +
-				"</div>" + "</body>" + "</html>";
+				"</div>" + "</body>" + "</html>");
 	
 	Serial.println("Index_2 constructed.");
 	Serial.println("Sending request..");
-
-	server.send(200, "text/html", (Index_1 + Index_2));
-	tmpBuffer = "";
+	server.send(200, "text/html", (http + Index));
 	Serial.println("Request sent!");
+	tmpBuffer = "";
+	Index = "";
 }
 
 void handleSave() {
-	server.arg("text1").toCharArray(emailAddress, ROM_BANK_SIZE);
-	server.arg("text2").toCharArray(faultCommand, ROM_BANK_SIZE);
 
-	Serial.println("Saving server data..");
-	Serial.println("email:" + String(emailAddress));
-	Serial.println("command:" + String(faultCommand));
-	
-	//save values to EEPROM;	
-	writeEeprom(emailAddress, 1);
-	writeEeprom(faultCommand, 2);
+	Serial.print("Saving server data..");	//save values to EEPROM;
+	emailAddress = server.arg("text1");
+	faultCommand = server.arg("text2");
+	EEPROM_SAVE(1, emailAddress);
+	EEPROM_SAVE(2, faultCommand);
+	EEPROM_SAVE(10, "ROM_OK");
+	Serial.println("Done!");
 
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
@@ -108,37 +105,49 @@ void handleSave() {
 	//ESP.restart();
 }
 
-void writeEeprom(char* NewData, int BankNumber) {
+void handleNotFound() {
+	Serial.println("Handling request: Not found");
+	server.send(404, "text/plain", "404: Not found");
+}
 
-	Serial.println("Writting to EEPROM");
+void EEPROM_SAVE(int BankNumber, String NewData) {
+
 	BankNumber *= ROM_BANK_SIZE;
+	char Data[ROM_BANK_SIZE];
+	NewData.toCharArray(Data, ROM_BANK_SIZE);
 
 	for (int i = 0; i < ROM_BANK_SIZE; i++) {
-		EEPROM.write(BankNumber + i, NewData[i]);
-		Serial.print(char(NewData[i]));
-		
-		if (NewData[i] == 0) break;
+		EEPROM.write(BankNumber + i, Data[i]);
+		//Serial.print(char(Data[i]));
+
+		if (Data[i] == 0) break;
 	}
 
 	EEPROM.commit();
-	Serial.println();
-	Serial.println("Done writting.");
 }
 
-void readEeprom(char* NewData, int BankNumber) {
+String EEPROM_READ(int BankNumber) {
 
-	Serial.println("Reading from EEPROM");
 	BankNumber *= ROM_BANK_SIZE;
+	char Data[ROM_BANK_SIZE];
 
-	for (int i = 0; i < ROM_BANK_SIZE; i++){
-		NewData[i] = EEPROM.read(BankNumber + i);
-		Serial.print(char(NewData[i]));
+	for (int i = 0; i < ROM_BANK_SIZE; i++) {
+		Data[i] = EEPROM.read(BankNumber + i);
+		//Serial.print(char(Data[i]));
 
-		if (NewData[i] == 0) break;
+		if (Data[i] == 0) break;
 	}
 
-	Serial.println();
-	Serial.println("Done reading.");
+	return String(Data);
+}
+
+boolean romIsEmpty() {
+	if (EEPROM_READ(10) == "ROM_OK") {
+		return false;
+		}
+	else {
+		return true;
+		}
 }
 
 void setup(void) {
@@ -153,13 +162,18 @@ void setup(void) {
 	Serial.print("Eeprom Conf. Size: ");
 	Serial.println(EEPROM_SIZE);
 
-	Serial.println("Reading Eeprom data..");
-	readEeprom(emailAddress, 1);
-	readEeprom(faultCommand, 2);
+	
 
-	Serial.println("Bank 1:" + String(emailAddress));
-	Serial.println("Bank 2:" + String(faultCommand));
-
+	if (romIsEmpty()){
+		Serial.println("Rom Empty.");
+		emailAddress = "";
+		faultCommand = "";
+	}
+	else{
+		Serial.println("Rom not Empty.");
+		emailAddress = EEPROM_READ(1);
+		faultCommand = EEPROM_READ(2);
+	}
 
 	Serial.println("Network Init..");
 	WiFi.hostname(hostName);
@@ -179,7 +193,6 @@ void setup(void) {
 	Serial.println("Connected!");
 	ipAddress = WiFi.localIP().toString();
 
-	dataBuffer.Init();
 	Serial.print("IP address: ");
 	Serial.println(ipAddress);
 
@@ -192,11 +205,16 @@ void setup(void) {
 }
 
 void loop(void) {
+
 	server.handleClient();
 
 	if (Serial.available()){
-		Serial.println("Data received, line: " + String(dataBuffer.nextLine));
-		dataBuffer.WriteLine(Serial.readString());
+		freeHeap = String((float)ESP.getFreeHeap() / KB);
+		powerSupply = String((float)ESP.getVcc() / KB);
+
+		Serial.println("Data received, line: " + String(dataBuffer.CurrentBufferPosition));
+		dataBuffer.WriteStringToBuffer(Serial.readString());
 	}
-	delay(300);
+
+	delay(100);
 }

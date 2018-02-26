@@ -2,7 +2,7 @@
 /*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 /*****************************************************************************/
 
-const char* Index_1 PROGMEM = R"=====(
+const char* http = R"=====(
 <!DOCTYPE html>
 <html>
   <head>
