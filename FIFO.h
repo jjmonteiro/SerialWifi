@@ -8,7 +8,8 @@ extern String powerSupply;
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
 
-	struct MemoryBuffer {
+	struct MemoryBuffer 
+	{
 
 		unsigned int CurrentBufferPosition;
 		char MEMORY_BUFFER[MAX_LINES][MAX_CHARS];
@@ -42,12 +43,9 @@ extern String powerSupply;
 	/*****************************************************************************/
 	/*	This member function returns the contents of the whole buffer
 	/*****************************************************************************/
-	String ReadStringFromBuffer() {
+	String ReadStringFromBuffer() 
+	{
 		String SavedData = "";
-		Serial.println("Buffer ReadAll Call");
-
-		Serial.print("FullLOG: "); Serial.println(IsBufferFull);
-		Serial.print("nextLine: "); Serial.println(CurrentBufferPosition);
 
 		if (IsBufferFull == true){
 			SavedData = ReadStringFromRange(CurrentBufferPosition, MAX_LINES);
@@ -56,7 +54,6 @@ extern String powerSupply;
 		if (CurrentBufferPosition != 0) {
 			SavedData += ReadStringFromRange(0, CurrentBufferPosition);
 		}
-
 
 		return SavedData;
 	}
@@ -72,7 +69,7 @@ extern String powerSupply;
 			for (unsigned int Index = StartPosition; Index < EndPostion; Index++)
 			{
 				Result += MEMORY_BUFFER[Index];
-				Serial.print(Index, DEC);
+				//Serial.print(Index, DEC);
 			}
 		}
 		return  Result;
@@ -83,18 +80,16 @@ extern String powerSupply;
 	/*****************************************************************************/
 	void WriteStringToBuffer(String NewData)
 	{
-		Serial.print("saving..");
-		Serial.println(freeHeap + "::" + powerSupply);
-		String Data = (String(millis()) + ": " + NewData);
-		Data.toCharArray(MEMORY_BUFFER[CurrentBufferPosition], MAX_CHARS);///code breaks here
+
+		Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
+
+		NewData.toCharArray(MEMORY_BUFFER[CurrentBufferPosition], MAX_CHARS);
 		CurrentBufferPosition++;
-		Serial.println("saved!");
 		
 		if (CurrentBufferPosition >= MAX_LINES)
 		{
 			CurrentBufferPosition = 0;
 			IsBufferFull = true;
-			Serial.println("rolling over");
 		}
 	}
 

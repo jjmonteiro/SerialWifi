@@ -6,7 +6,7 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define MAX_LINES 70		//40*100 = 4KB
+#define MAX_LINES 100		//40*100 = 4KB
 #define MAX_CHARS 100
 #define EEPROM_SIZE 330		//Size can be anywhere between 4 and 4096 bytes
 #define ROM_BANK_SIZE 30	//chars = bytes
@@ -31,29 +31,24 @@ MemoryBuffer dataBuffer;
 String ipAddress;
 String freeHeap;
 String powerSupply;
-String Index;
-String tmpBuffer;
 
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
 
 
-
-
 void handleRoot() {
 
-
-	Serial.println("Handling request: index..");
-	tmpBuffer = dataBuffer.ReadStringFromBuffer();
-	Serial.println("Buffer retrieved.");
+	//Serial.println("Handling request: index..");
+	//String tmpBuffer = dataBuffer.ReadStringFromBuffer();
+	//Serial.println("Buffer retrieved.");
 
 	// get static webpage part residing in flash memory
 	FPSTR(http);
-
-	Serial.println("Index_1 retrieved.");
+	
+	//Serial.println("Index_1 retrieved.");
 	//changeable webpage parts
 	
-	Index = 
+	String Index = http + 
 				("Network SSID: " +
 				String(wifiSSID) + "<br>" +
 				"IP Address: " +
@@ -75,17 +70,17 @@ void handleRoot() {
 				"<article class='article'>" +
 				"<p>Buffer Ascii Data</p>" +
 				"<textarea class='border' readonly>" +
-				tmpBuffer + "</textarea>" +
+				dataBuffer.ReadStringFromBuffer() + "</textarea>" +
 				"</article>" +
 				"<footer>Copyright &copy; 2018 Joaquim Monteiro</footer>" +
 				"</div>" + "</body>" + "</html>");
 	
-	Serial.println("Index_2 constructed.");
-	Serial.println("Sending request..");
-	server.send(200, "text/html", (http + Index));
-	Serial.println("Request sent!");
-	tmpBuffer = "";
-	Index = "";
+	//Serial.println("Index_2 constructed.");
+	//Serial.println("Sending request..");
+	server.send(200, "text/html", (Index));
+
+	//Serial.println("Request sent!");
+
 }
 
 void handleSave() {
@@ -152,7 +147,7 @@ boolean romIsEmpty() {
 
 void setup(void) {
 	Serial.setTimeout(SERIAL_TIMEOUT);
-	Serial.begin(SERIAL_BAUDRATE);
+	Serial.begin(115200, SERIAL_8N1);
 	Serial.println();
 	Serial.println("=== uP Restart ===");
 	Serial.print("Serial Init. Baudrate: ");
@@ -211,9 +206,9 @@ void loop(void) {
 	if (Serial.available()){
 		freeHeap = String((float)ESP.getFreeHeap() / KB);
 		powerSupply = String((float)ESP.getVcc() / KB);
+		String Debug = String(millis()) + " :: " + freeHeap + " :: " + powerSupply + " :: ";
 
-		Serial.println("Data received, line: " + String(dataBuffer.CurrentBufferPosition));
-		dataBuffer.WriteStringToBuffer(Serial.readString());
+		dataBuffer.WriteStringToBuffer(Debug + Serial.readString());
 	}
 
 	delay(100);
