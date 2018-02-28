@@ -6,8 +6,9 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define MAX_LINES 100		//40*100 = 4KB
-#define MAX_CHARS 100
+#define SERIAL_BUFFER 512
+//#define MAX_LINES 100		//40*100 = 4KB
+#define BUFFER_SIZE 7000 //Bytes
 #define EEPROM_SIZE 330		//Size can be anywhere between 4 and 4096 bytes
 #define ROM_BANK_SIZE 30	//chars = bytes
 #define SERIAL_TIMEOUT 1000 //ms
@@ -204,12 +205,14 @@ void loop(void) {
 	server.handleClient();
 
 	if (Serial.available()){
-		freeHeap = String((float)ESP.getFreeHeap() / KB);
-		powerSupply = String((float)ESP.getVcc() / KB);
-		String Debug = String(millis()) + " :: " + freeHeap + " :: " + powerSupply + " :: ";
+		//freeHeap = String((float)ESP.getFreeHeap() / KB);
+		//powerSupply = String((float)ESP.getVcc() / KB);
+		//String Debug = String(millis()) + " :: " + freeHeap + " :: " + powerSupply + " :: ";
 
-		dataBuffer.WriteStringToBuffer(Debug + Serial.readString());
+		//dataBuffer.WriteStringToBuffer(Serial.readString());
+
+		dataBuffer.WriteByteToBuffer(Serial.read());
 	}
 
-	delay(100);
+	//delay(100);
 }

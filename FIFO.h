@@ -12,7 +12,7 @@ extern String powerSupply;
 	{
 
 		unsigned int CurrentBufferPosition;
-		char MEMORY_BUFFER[MAX_LINES][MAX_CHARS];
+		char MEMORY_BUFFER[BUFFER_SIZE];
 		bool IsBufferFull;
 
 	/*****************************************************************************/
@@ -23,12 +23,8 @@ extern String powerSupply;
 		IsBufferFull = false;
 		CurrentBufferPosition = 0;
 
-		for (int a = 0; (a < MAX_LINES); a++)
-		{
-			for (int b = 0; (b < MAX_CHARS); b++)
-			{
-				MEMORY_BUFFER[a][b] = 0;
-			}
+		for (int Index = 0; (Index < BUFFER_SIZE); Index++){
+			MEMORY_BUFFER[Index] = 0;
 		}
 	}
 
@@ -48,7 +44,7 @@ extern String powerSupply;
 		String SavedData = "";
 
 		if (IsBufferFull == true){
-			SavedData = ReadStringFromRange(CurrentBufferPosition, MAX_LINES);
+			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE);
 		}
 
 		if (CurrentBufferPosition != 0) {
@@ -66,10 +62,9 @@ extern String powerSupply;
 		String Result = "";
 		if (StartPosition < EndPostion)
 		{
-			for (unsigned int Index = StartPosition; Index < EndPostion; Index++)
-			{
+			for (unsigned int Index = StartPosition; Index < EndPostion; Index++){
 				Result += MEMORY_BUFFER[Index];
-				//Serial.print(Index, DEC);
+				//Serial.print(MEMORY_BUFFER[Index]);
 			}
 		}
 		return  Result;
@@ -81,12 +76,33 @@ extern String powerSupply;
 	void WriteStringToBuffer(String NewData)
 	{
 
-		Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
+		//Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
+		char tmpBuffer [SERIAL_BUFFER];
+		NewData.toCharArray(tmpBuffer, SERIAL_BUFFER);
 
-		NewData.toCharArray(MEMORY_BUFFER[CurrentBufferPosition], MAX_CHARS);
-		CurrentBufferPosition++;
-		
-		if (CurrentBufferPosition >= MAX_LINES)
+		for (unsigned int Index = 0; Index < NewData.length(); Index++) {
+			MEMORY_BUFFER[CurrentBufferPosition] = tmpBuffer[Index];
+			
+			CurrentBufferPosition++;
+			if (CurrentBufferPosition >= BUFFER_SIZE)
+			{
+				CurrentBufferPosition = 0;
+				IsBufferFull = true;
+			}
+		}
+	}
+
+	/*****************************************************************************/
+	/*	This member function writes a byte into the buffer
+	/*****************************************************************************/
+	void WriteByteToBuffer(char NewData)
+	{
+
+		//Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
+
+		MEMORY_BUFFER[CurrentBufferPosition++] = NewData;
+
+		if (CurrentBufferPosition >= BUFFER_SIZE)
 		{
 			CurrentBufferPosition = 0;
 			IsBufferFull = true;
@@ -94,6 +110,5 @@ extern String powerSupply;
 	}
 
 };
-
 
 #endif
