@@ -69,7 +69,7 @@ void handleSave() {
 	server.send(302, "text/plain", "");
 
 
-	//ESP.restart();
+	ESP.restart();
 }
 
 void handleNotFound() {
@@ -188,7 +188,7 @@ void setup(void) {
 
 void loop(void) {
 
-	Serial.println(debugInfo());
+	//Serial.println(debugInfo());
 
 	server.handleClient();
 
@@ -198,10 +198,11 @@ void loop(void) {
 			serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 			
 			if (serialBuffer.endsWith("\n")) { // check string termination
-				dataBuffer.WriteStringToBuffer(debugInfo() + serialBuffer); //write to buffer
 					if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
-						Serial.println("FAULT FOUND!");
+						serialBuffer += " --> FAULT FOUND! <-- \n";
 					}
+				dataBuffer.WriteStringToBuffer(debugInfo() + serialBuffer); //write to buffer
+
 				serialBuffer = "";
 			}
 			
