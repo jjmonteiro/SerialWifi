@@ -1,9 +1,6 @@
 #ifndef MEMORY_BUFFER_H
 #define MEMORY_BUFFER_H
 
-extern String freeHeap;
-extern String powerSupply;
-
 	/*****************************************************************************/
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
@@ -37,6 +34,19 @@ extern String powerSupply;
 	}
 
 	/*****************************************************************************/
+	/*	This member function returns the current size of the buffer
+	/*****************************************************************************/
+	unsigned int GetCurrentSize()
+	{
+		if (IsBufferFull == true) {
+			return BUFFER_SIZE;
+		}
+		else {
+			return CurrentBufferPosition;
+		}
+	}
+
+	/*****************************************************************************/
 	/*	This member function returns the contents of the whole buffer
 	/*****************************************************************************/
 	String ReadStringFromBuffer() 
@@ -60,11 +70,10 @@ extern String powerSupply;
 	String  ReadStringFromRange(unsigned int StartPosition, unsigned int EndPostion)
 	{
 		String Result = "";
-		if (StartPosition < EndPostion)
+		if (StartPosition < EndPostion) //EndPosition will never be returned!
 		{
 			for (unsigned int Index = StartPosition; Index < EndPostion; Index++){
 				Result += MEMORY_BUFFER[Index];
-				//Serial.print(MEMORY_BUFFER[Index]);
 			}
 		}
 		return  Result;
@@ -89,7 +98,7 @@ extern String powerSupply;
 
 	/*****************************************************************************/
 	/*	This member function writes a byte into the buffer
-	/*****************************************************************************/
+	/*****************************************************************************
 	void WriteByteToBuffer(char NewData)
 	{
 
@@ -102,7 +111,7 @@ extern String powerSupply;
 			CurrentBufferPosition = 0;
 			IsBufferFull = true;
 		}
-	}
+	}*/
 
 };
 

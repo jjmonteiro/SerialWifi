@@ -6,12 +6,11 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define SERIAL_BUFFER 512
-//#define MAX_LINES 100		//40*100 = 4KB
-#define BUFFER_SIZE 7000 //Bytes
-#define EEPROM_SIZE 330		//Size can be anywhere between 4 and 4096 bytes
-#define ROM_BANK_SIZE 30	//chars = bytes
+#define BUFFER_SIZE 6500		//Bytes (x2 + 4K < 20KB)
+#define EEPROM_SIZE 330			//Size can be anywhere between 4 and 4096 bytes
+#define ROM_BANK_SIZE 30		//bytes
 #define SERIAL_TIMEOUT 1000 //ms
+#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -30,11 +29,6 @@ String faultCommand;
 String serialBuffer;
 MemoryBuffer dataBuffer;
 
-String ipAddress;
-String freeHeap;
-String powerSupply;
-String debugInfo;
-
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
 
@@ -42,21 +36,23 @@ ESP8266WebServer server(PORT);
 void handleRoot() {
 	Serial.println("Handling request: Index..");
 	
-	String Index = FPSTR(HTTP_WEBSITE);	// get static webpage part residing in flash memory
+	// get static webpage part residing in flash memory ~4Kb
+	String Index = FPSTR(HTTP_WEBSITE);	
+
 	Serial.println("replacing strings..");
 
+	Index.replace("{{dataBuffer}}", dataBuffer.ReadStringFromBuffer());	
 	Index.replace("{{wifiSSID}}", String(wifiSSID));
-	Index.replace("{{ipAddress}}", ipAddress);
-	Index.replace("{{freeHeap}}", freeHeap);
-	Index.replace("{{powerSupply}}", powerSupply);
+	Index.replace("{{ipAddress}}", ipAddress());
+	Index.replace("{{powerSupply}}", powerSupply());
 	Index.replace("{{emailAddress}}", emailAddress);
 	Index.replace("{{faultCommand}}", faultCommand);
-	Index.replace("{{dataBuffer}}", dataBuffer.ReadStringFromBuffer());
+	Index.replace("{{freeHeap}}", freeHeap());
+	Index.replace("{{usedRam}}", String((float)(Index.length() + dataBuffer.GetCurrentSize()) / KB));
 
 	server.sendHeader("Content-Length", String(Index.length()));
 	server.send(200, "text/html", Index);
-	Serial.println("Request sent!");
-
+	Serial.print("Request sent!");
 }
 
 void handleSave() {
@@ -121,6 +117,22 @@ boolean romIsEmpty() {
 		}
 }
 
+String ipAddress() {
+	return WiFi.localIP().toString();
+}
+
+String debugInfo() {
+	return String(millis()) + ":" + freeHeap() + ":" + powerSupply() + ":: ";
+}
+
+String powerSupply() {
+	return String((float)ESP.getVcc() / KB);
+}
+
+String freeHeap() {
+	return String((float)ESP.getFreeHeap() / KB);
+}
+
 void setup(void) {
 	Serial.setTimeout(SERIAL_TIMEOUT);
 	Serial.begin(115200, SERIAL_8N1);
@@ -132,7 +144,6 @@ void setup(void) {
 	EEPROM.begin(EEPROM_SIZE);
 	Serial.print("Eeprom Conf. Size: ");
 	Serial.println(EEPROM_SIZE);
-
 	
 
 	if (romIsEmpty()){
@@ -162,10 +173,10 @@ void setup(void) {
 	}
 	Serial.println();
 	Serial.println("Connected!");
-	ipAddress = WiFi.localIP().toString();
+
 
 	Serial.print("IP address: ");
-	Serial.println(ipAddress);
+	Serial.println(ipAddress());
 
 	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
 	server.on("/", HTTP_POST, handleSave); // when client saves changes
@@ -177,11 +188,9 @@ void setup(void) {
 
 void loop(void) {
 
-	server.handleClient();
+	Serial.println(debugInfo());
 
-	freeHeap = String((float)ESP.getFreeHeap() / KB);
-	powerSupply = String((float)ESP.getVcc() / KB);
-  debugInfo = String(millis()) + ":" + freeHeap + ":" + powerSupply + ":: ";
+	server.handleClient();
 
 
 	while (Serial.available()) {
@@ -189,7 +198,7 @@ void loop(void) {
 			serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 			
 			if (serialBuffer.endsWith("\n")) { // check string termination
-				dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
+				dataBuffer.WriteStringToBuffer(debugInfo() + serialBuffer); //write to buffer
 					if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
 						Serial.println("FAULT FOUND!");
 					}
@@ -201,5 +210,5 @@ void loop(void) {
 		//dataBuffer.WriteStringToBuffer(Serial.readString());
 		//dataBuffer.WriteByteToBuffer(Serial.read());
 
-	delay(10);
+	delay(100);
 }

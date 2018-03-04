@@ -104,6 +104,7 @@ input:hover,input:focus {border: 2px solid grey}
 	Network SSID: {{wifiSSID}}<br>
 	IP Address: {{ipAddress}}<br>
 	Free Memory: {{freeHeap}} Kb<br>
+	Used Memory: {{usedRam}} Kb<br>
 	Battery: {{powerSupply}} V
 </p>
 
