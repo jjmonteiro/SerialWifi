@@ -76,14 +76,9 @@ extern String powerSupply;
 	void WriteStringToBuffer(String NewData)
 	{
 
-		//Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
-		char tmpBuffer [SERIAL_BUFFER];
-		NewData.toCharArray(tmpBuffer, SERIAL_BUFFER);
-
 		for (unsigned int Index = 0; Index < NewData.length(); Index++) {
-			MEMORY_BUFFER[CurrentBufferPosition] = tmpBuffer[Index];
+			MEMORY_BUFFER[CurrentBufferPosition++] = NewData.charAt(Index);
 			
-			CurrentBufferPosition++;
 			if (CurrentBufferPosition >= BUFFER_SIZE)
 			{
 				CurrentBufferPosition = 0;

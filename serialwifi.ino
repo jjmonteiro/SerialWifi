@@ -27,60 +27,35 @@ const char* hostName	 = "serialwifi";
 String emailAddress;
 String faultCommand;
 
+String serialBuffer;
 MemoryBuffer dataBuffer;
 
 String ipAddress;
 String freeHeap;
 String powerSupply;
+String debugInfo;
 
 ADC_MODE(ADC_VCC);
 ESP8266WebServer server(PORT);
 
 
 void handleRoot() {
-
-	//Serial.println("Handling request: index..");
-	//String tmpBuffer = dataBuffer.ReadStringFromBuffer();
-	//Serial.println("Buffer retrieved.");
-
-	// get static webpage part residing in flash memory
-	FPSTR(http);
+	Serial.println("Handling request: Index..");
 	
-	//Serial.println("Index_1 retrieved.");
-	//changeable webpage parts
-	
-	String Index = http + 
-				("Network SSID: " +
-				String(wifiSSID) + "<br>" +
-				"IP Address: " +
-				ipAddress + "<br>" +
-				"Free Memory: " +
-				freeHeap + "Kb<br>" +
-				"Battery: " +
-				powerSupply + "V</p>" +
-				"<p>Configurations</p>" +
-				"<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>" +
-				"<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='" +
-				emailAddress + "' required>" +
-				"<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='40' name='text2' value='" +
-				faultCommand + "' required>" +
-				"<input class='textbox border' type='submit' value='Save' name='click1'>" +
-				"</form>" +
-				"</nav>" +
-				"<!---RIGHT PANEL--->" +
-				"<article class='article'>" +
-				"<p>Buffer Ascii Data</p>" +
-				"<textarea class='border' readonly>" +
-				dataBuffer.ReadStringFromBuffer() + "</textarea>" +
-				"</article>" +
-				"<footer>Copyright &copy; 2018 Joaquim Monteiro</footer>" +
-				"</div>" + "</body>" + "</html>");
-	
-	//Serial.println("Index_2 constructed.");
-	//Serial.println("Sending request..");
-	server.send(200, "text/html", (Index));
+	String Index = FPSTR(HTTP_WEBSITE);	// get static webpage part residing in flash memory
+	Serial.println("replacing strings..");
 
-	//Serial.println("Request sent!");
+	Index.replace("{{wifiSSID}}", String(wifiSSID));
+	Index.replace("{{ipAddress}}", ipAddress);
+	Index.replace("{{freeHeap}}", freeHeap);
+	Index.replace("{{powerSupply}}", powerSupply);
+	Index.replace("{{emailAddress}}", emailAddress);
+	Index.replace("{{faultCommand}}", faultCommand);
+	Index.replace("{{dataBuffer}}", dataBuffer.ReadStringFromBuffer());
+
+	server.sendHeader("Content-Length", String(Index.length()));
+	server.send(200, "text/html", Index);
+	Serial.println("Request sent!");
 
 }
 
@@ -204,15 +179,27 @@ void loop(void) {
 
 	server.handleClient();
 
-	if (Serial.available()){
-		//freeHeap = String((float)ESP.getFreeHeap() / KB);
-		//powerSupply = String((float)ESP.getVcc() / KB);
-		//String Debug = String(millis()) + " :: " + freeHeap + " :: " + powerSupply + " :: ";
+	freeHeap = String((float)ESP.getFreeHeap() / KB);
+	powerSupply = String((float)ESP.getVcc() / KB);
+  debugInfo = String(millis()) + ":" + freeHeap + ":" + powerSupply + ":: ";
 
+
+	while (Serial.available()) {
+
+			serialBuffer += char(Serial.read()); //gets one byte from serial buffer
+			
+			if (serialBuffer.endsWith("\n")) { // check string termination
+				dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
+					if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
+						Serial.println("FAULT FOUND!");
+					}
+				serialBuffer = "";
+			}
+			
+		}
+		
 		//dataBuffer.WriteStringToBuffer(Serial.readString());
+		//dataBuffer.WriteByteToBuffer(Serial.read());
 
-		dataBuffer.WriteByteToBuffer(Serial.read());
-	}
-
-	//delay(100);
+	delay(10);
 }
