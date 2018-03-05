@@ -120,26 +120,26 @@ input:hover,input:focus {border: 2px solid grey}
 <p>Data Format</p> 
     
   <select class='textbox border' name='option'>
-    <option value="0" {{option0}}>115200</option>
-    <option value="1" {{option1}}>57600</option>
-    <option value="2" {{option2}}>38400</option>
-    <option value="3" {{option3}}>28800</option>
-    <option value="4" {{option4}}>19200</option>
-    <option value="5" {{option5}}>14400</option>
-    <option value="6" {{option6}}>9600</option>
-    <option value="7" {{option7}}>4800</option>
-    <option value="8" {{option8}}>2400</option>
-    <option value="9" {{option9}}>1200</option>
-    <option value="10" {{option10}}>600</option>
-    <option value="11" {{option11}}>300</option>
+    <option value='option0' {{option0}}>115200</option>
+    <option value='option1' {{option1}}>57600</option>
+    <option value='option2' {{option2}}>38400</option>
+    <option value='option3' {{option3}}>28800</option>
+    <option value='option4' {{option4}}>19200</option>
+    <option value='option5' {{option5}}>14400</option>
+    <option value='option6' {{option6}}>9600</option>
+    <option value='option7' {{option7}}>4800</option>
+    <option value='option8' {{option8}}>2400</option>
+    <option value='option9' {{option9}}>1200</option>
+    <option value='option10' {{option10}}>600</option>
+    <option value='option11' {{option11}}>300</option>
   </select>
   
   <br>
 	<label>Ascii
-	  <input type="radio" name='radio'>
+	  <input type="radio" name='radio' value='radio0' {{radio0}}>
 	</label>
 	<label>Byte
-	  <input type="radio" name='radio'>
+	  <input type="radio" name='radio' value='radio1' {{radio1}}>
 	</label>
   
   <br>

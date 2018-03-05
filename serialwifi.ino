@@ -25,6 +25,8 @@ const char* hostName	 = "serialwifi";
 
 String emailAddress;
 String faultCommand;
+String baudRateOption;
+String dataFormatRadio;
 
 String serialBuffer;
 MemoryBuffer dataBuffer;
@@ -48,6 +50,8 @@ void handleRoot() {
 	Index.replace("{{emailAddress}}", emailAddress);
 	Index.replace("{{faultCommand}}", faultCommand);
 	Index.replace("{{freeHeap}}", freeHeap());
+	Index.replace(baudRateOption, "selected");
+	Index.replace(dataFormatRadio, "checked");
 	Index.replace("{{usedRam}}", String((float)(Index.length() + dataBuffer.GetCurrentSize()) / KB));
 
 	server.sendHeader("Content-Length", String(Index.length()));
@@ -60,14 +64,20 @@ void handleSave() {
 	Serial.print("Saving server data..");	//save values to EEPROM;
 	emailAddress = server.arg("text1");
 	faultCommand = server.arg("text2");
+	baudRateOption = "{{" + server.arg("option") + "}}";
+	dataFormatRadio = "{{" + server.arg("radio") + "}}";
+
+
 	EEPROM_SAVE(1, emailAddress);
 	EEPROM_SAVE(2, faultCommand);
+	EEPROM_SAVE(3, baudRateOption);
+	EEPROM_SAVE(4, dataFormatRadio);
+
 	EEPROM_SAVE(10, "ROM_OK");
 	Serial.println("Done!");
 
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
-
 
 	ESP.restart();
 }
@@ -150,11 +160,15 @@ void setup(void) {
 		Serial.println("Rom Empty.");
 		emailAddress = "";
 		faultCommand = "";
+		baudRateOption = "";
+		dataFormatRadio = "";
 	}
 	else{
 		Serial.println("Rom not Empty.");
 		emailAddress = EEPROM_READ(1);
 		faultCommand = EEPROM_READ(2);
+		baudRateOption = EEPROM_READ(3);
+		dataFormatRadio = EEPROM_READ(4);
 	}
 
 	Serial.println("Network Init..");
