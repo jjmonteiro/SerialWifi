@@ -136,10 +136,10 @@ input:hover,input:focus {border: 2px solid grey}
   
   <br>
 	<label>Ascii
-	  <input type="radio" name='radio' value='radio0' {{radio0}}>
+	  <input type='radio' name='radio' value='radio0' {{radio0}}>
 	</label>
 	<label>Byte
-	  <input type="radio" name='radio' value='radio1' {{radio1}}>
+	  <input type='radio' name='radio' value='radio1' {{radio1}}>
 	</label>
   
   <br>

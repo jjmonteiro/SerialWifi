@@ -6,7 +6,7 @@
 #define KB		 1024
 #define PORT	 80
 #define SERIAL_BAUDRATE 115200
-#define BUFFER_SIZE 6500		//Bytes (x2 + 4K < 20KB)
+#define BUFFER_SIZE 6700		//Bytes (x2 + 4K < 20KB)
 #define EEPROM_SIZE 330			//Size can be anywhere between 4 and 4096 bytes
 #define ROM_BANK_SIZE 30		//bytes
 #define SERIAL_TIMEOUT 1000 //ms
@@ -41,14 +41,14 @@ void handleRoot() {
 	// get static webpage part residing in flash memory ~4Kb
 	String Index = FPSTR(HTTP_WEBSITE);	
 
-	Serial.println("replacing strings..");
+	Serial.println("replacing text strings..");
 
-	Index.replace("{{dataBuffer}}", dataBuffer.ReadStringFromBuffer());	
-	Index.replace("{{wifiSSID}}", String(wifiSSID));
+	Index.replace("{{dataBuffer}}", htmlReplaceSpecialChars(dataBuffer.ReadStringFromBuffer()));
+	Index.replace("{{wifiSSID}}", htmlReplaceSpecialChars(String(wifiSSID)));
 	Index.replace("{{ipAddress}}", ipAddress());
 	Index.replace("{{powerSupply}}", powerSupply());
-	Index.replace("{{emailAddress}}", emailAddress);
-	Index.replace("{{faultCommand}}", faultCommand);
+	Index.replace("{{emailAddress}}", htmlReplaceSpecialChars(emailAddress));
+	Index.replace("{{faultCommand}}", htmlReplaceSpecialChars(faultCommand));
 	Index.replace("{{freeHeap}}", freeHeap());
 	Index.replace(baudRateOption, "selected");
 	Index.replace(dataFormatRadio, "checked");
@@ -56,7 +56,7 @@ void handleRoot() {
 
 	server.sendHeader("Content-Length", String(Index.length()));
 	server.send(200, "text/html", Index);
-	Serial.print("Request sent!");
+	Serial.println("Request sent!");
 }
 
 void handleSave() {
@@ -143,6 +143,16 @@ String freeHeap() {
 	return String((float)ESP.getFreeHeap() / KB);
 }
 
+String htmlReplaceSpecialChars(String NewData) {
+	NewData.replace("&", "&amp;");
+	NewData.replace(">", "&gt;");
+	NewData.replace("<", "&lt;");
+	NewData.replace("<", "&lt;");
+	NewData.replace("\'", "&apos;");
+	NewData.replace("\"", "&quot;");
+	return NewData;
+}
+
 void setup(void) {
 	Serial.setTimeout(SERIAL_TIMEOUT);
 	Serial.begin(115200, SERIAL_8N1);
@@ -215,7 +225,7 @@ void loop(void) {
 					if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
 						serialBuffer += " --> FAULT FOUND! <-- \n";
 					}
-				dataBuffer.WriteStringToBuffer(debugInfo() + serialBuffer); //write to buffer
+				dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
 
 				serialBuffer = "";
 			}
