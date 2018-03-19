@@ -10,7 +10,6 @@
 #define EEPROM_SIZE 330			//Size can be anywhere between 4 and 4096 bytes
 #define ROM_BANK_SIZE 30		//bytes
 #define SERIAL_TIMEOUT 1000 //ms
-#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
@@ -50,8 +49,8 @@ void handleRoot() {
 	Index.replace("{{emailAddress}}", htmlReplaceSpecialChars(emailAddress));
 	Index.replace("{{faultCommand}}", htmlReplaceSpecialChars(faultCommand));
 	Index.replace("{{freeHeap}}", freeHeap());
-	Index.replace(baudRateOption, "selected");
-	Index.replace(dataFormatRadio, "checked");
+	Index.replace("{{" + baudRateOption + "}}", "selected");
+	Index.replace("{{" + dataFormatRadio + "}}", "checked");
 	Index.replace("{{usedRam}}", String((float)(Index.length() + dataBuffer.GetCurrentSize()) / KB));
 
 	server.sendHeader("Content-Length", String(Index.length()));
@@ -61,21 +60,22 @@ void handleRoot() {
 
 void handleSave() {
 
-	Serial.print("Saving server data..");	//save values to EEPROM;
-	emailAddress = server.arg("text1");
-	faultCommand = server.arg("text2");
-	baudRateOption = "{{" + server.arg("option") + "}}";
-	dataFormatRadio = "{{" + server.arg("radio") + "}}";
+	if (server.arg(4).toInt()) {				//button			
+		Serial.println("Saving server data..");	//save values to EEPROM;
+		emailAddress = server.arg(0);			//text1
+		faultCommand = server.arg(1);			//text2
+		baudRateOption = server.arg(2);			//option
+		dataFormatRadio = server.arg(3);		//radio
 
+		EEPROM_SAVE(1, emailAddress);
+		EEPROM_SAVE(2, faultCommand);
+		EEPROM_SAVE(3, baudRateOption);
+		EEPROM_SAVE(4, dataFormatRadio);
 
-	EEPROM_SAVE(1, emailAddress);
-	EEPROM_SAVE(2, faultCommand);
-	EEPROM_SAVE(3, baudRateOption);
-	EEPROM_SAVE(4, dataFormatRadio);
+		EEPROM_SAVE(10, "ROM_OK");
+	}
 
-	EEPROM_SAVE(10, "ROM_OK");
-	Serial.println("Done!");
-
+	Serial.println("Done! Restarting..");
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
 
@@ -153,11 +153,42 @@ String htmlReplaceSpecialChars(String NewData) {
 	return NewData;
 }
 
+void setSerialBaudrate(String option) {
+
+	option.remove(0,6); //option0
+	int baud = option.toInt(); 
+
+	//Serial.print("Changing serial baud to: ");
+	//Serial.println(baud);
+
+	switch (baud)
+	{
+
+	case 0: baud = 115200; break;
+	case 1: baud = 57600; break;
+	case 2: baud = 38400; break;
+	case 3: baud = 28800; break;
+	case 4: baud = 19200; break;
+	case 5: baud = 14400; break;
+	case 6: baud = 9600; break;
+	case 7: baud = 4800; break;
+	case 8: baud = 2400; break;
+	case 9: baud = 1200; break;
+
+	default:
+		baud = 115200; break;
+	}
+
+	Serial.flush();
+	Serial.begin(baud, SERIAL_8N1);
+}
+
 void setup(void) {
 	Serial.setTimeout(SERIAL_TIMEOUT);
-	Serial.begin(115200, SERIAL_8N1);
+	//Serial.begin(SERIAL_BAUDRATE, SERIAL_8N1);
+	setSerialBaudrate("");
 	Serial.println();
-	Serial.println("=== uP Restart ===");
+	Serial.println("=== ESP-01 Restart ===");
 	Serial.print("Serial Init. Baudrate: ");
 	Serial.println(SERIAL_BAUDRATE);
 
@@ -181,6 +212,7 @@ void setup(void) {
 		dataFormatRadio = EEPROM_READ(4);
 	}
 
+	setSerialBaudrate(baudRateOption);
 	Serial.println("Network Init..");
 	WiFi.hostname(hostName);
 	Serial.print("Netbios: ");

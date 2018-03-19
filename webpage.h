@@ -86,7 +86,13 @@ textarea {
 }
 
 .center {text-align: center}
+
 input:hover,input:focus {border: 2px solid grey}
+.button {
+    width: 45%;
+    display: inline;
+}
+
 </style>
 </head>
 
@@ -111,7 +117,12 @@ input:hover,input:focus {border: 2px solid grey}
 <br>
 <p>Configurations</p>
 
-<form action='/' method='POST' autocomplete='off' onsubmit=click1.value='Saving...'>
+<form accept-charset="UTF-8" action='/' method='POST' autocomplete='off' onsubmit="
+if(button.value==1){
+		click0.value='Saving..';
+	} else {
+		click1.value='Restarting..';
+	}">
 
 	<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='{{emailAddress}}' required>
 	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='40' name='text2' value='{{faultCommand}}' required>
@@ -145,7 +156,9 @@ input:hover,input:focus {border: 2px solid grey}
   <br>
   <br>
   <br>
-	<input class='textbox border' type='submit' value='Save' name='click1'>
+		<input type='hidden' name='button' value='0'>
+		<input class='textbox border button' type='submit' name='click0' value='Save' onclick="button.value='1'" style='float:left'>
+    	<input class='textbox border button' type='submit' name='click1' value='Restart' onclick="button.value='0'" style='float:right'>
 </form>
 </nav>
 
