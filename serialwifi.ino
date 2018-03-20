@@ -3,14 +3,6 @@
 /*  EEPROM implementation test
 /*****************************************************************************/
 
-#define KB		 1024
-#define PORT	 80
-#define SERIAL_BAUDRATE 115200
-#define BUFFER_SIZE 6700		//Bytes (x2 + 4K < 20KB)
-#define EEPROM_SIZE 330			//Size can be anywhere between 4 and 4096 bytes
-#define ROM_BANK_SIZE 30		//bytes
-#define SERIAL_TIMEOUT 1000 //ms
-
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
@@ -18,9 +10,15 @@
 #include "webpage.h"
 #include "FIFO.h"
 
-const char* wifiSSID	 = "(-_-)";
-const char* wifiPassword = "monteiro";
-const char* hostName	 = "serialwifi";
+static const int  KB	= 1024;
+static const int  PORT  = 80;
+static const int  SERIAL_BAUDRATE = 115200;
+static const int  EEPROM_SIZE	  = 330;			//Size can be anywhere between 4 and 4096 bytes
+static const int  ROM_BANK_SIZE	  = 30;			//bytes long
+static const int  SERIAL_TIMEOUT  = 1000;		//ms
+static const char*  wifiSSID	  = "(-_-)";
+static const char*  wifiPassword  = "monteiro";
+static const char*  hostName	  = "serialwifi";
 
 String emailAddress;
 String faultCommand;
@@ -61,13 +59,13 @@ void handleRoot() {
 void handleSave() {
 
 	if (server.arg(4).toInt()) {				//button			
-		Serial.println("Saving server data..");	//save values to EEPROM;
+		Serial.println("Saving server data..");	
 		emailAddress = server.arg(0);			//text1
 		faultCommand = server.arg(1);			//text2
 		baudRateOption = server.arg(2);			//option
 		dataFormatRadio = server.arg(3);		//radio
 
-		EEPROM_SAVE(1, emailAddress);
+		EEPROM_SAVE(1, emailAddress);			//save values to EEPROM;
 		EEPROM_SAVE(2, faultCommand);
 		EEPROM_SAVE(3, baudRateOption);
 		EEPROM_SAVE(4, dataFormatRadio);
@@ -79,7 +77,7 @@ void handleSave() {
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
 
-	ESP.restart();
+	ESP.reset();
 }
 
 void handleNotFound() {

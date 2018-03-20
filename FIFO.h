@@ -4,6 +4,7 @@
 	/*****************************************************************************/
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
+	static const int  BUFFER_SIZE = 6700;			//Bytes (x2 + 4K < 20KB)
 
 	struct MemoryBuffer 
 	{
