@@ -75,7 +75,6 @@
     <ProjectCapability Include="VisualMicro" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
     <None Include="serialwifi.ino">
       <FileType>CppCode</FileType>
     </None>
@@ -83,7 +82,6 @@
   <ItemGroup>
     <ClInclude Include="FIFO.h" />
     <ClInclude Include="webpage.h" />
-    <ClInclude Include="__vm\.serialwifi.vsarduino.h" />
   </ItemGroup>
   <PropertyGroup>
     <DebuggerFlavor>VisualMicroDebugger</DebuggerFlavor>

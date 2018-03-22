@@ -16,12 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="serialwifi.ino" />
-    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="__vm\.serialwifi.vsarduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="webpage.h">
       <Filter>Header Files</Filter>
     </ClInclude>

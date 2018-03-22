@@ -41,15 +41,15 @@ void handleRoot() {
 	Serial.println("replacing text strings..");
 
 	Index.replace("{{dataBuffer}}", htmlReplaceSpecialChars(dataBuffer.ReadStringFromBuffer()));
-	Index.replace("{{wifiSSID}}", htmlReplaceSpecialChars(String(wifiSSID)));
+	Index.replace("{{wifiSSID}}", String(wifiSSID));
 	Index.replace("{{ipAddress}}", ipAddress());
 	Index.replace("{{powerSupply}}", powerSupply());
 	Index.replace("{{emailAddress}}", htmlReplaceSpecialChars(emailAddress));
 	Index.replace("{{faultCommand}}", htmlReplaceSpecialChars(faultCommand));
-	Index.replace("{{freeHeap}}", freeHeap());
+	Index.replace("{{bufferSize}}", String((float)dataBuffer.GetCurrentSize() / KB));
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
-	Index.replace("{{usedRam}}", String((float)(Index.length() + dataBuffer.GetCurrentSize()) / KB));
+	Index.replace("{{usedRam}}", String((float)(ESP.getFreeHeap() - Index.length() - dataBuffer.GetCurrentSize()) / KB));
 
 	server.sendHeader("Content-Length", String(Index.length()));
 	server.send(200, "text/html", Index);
@@ -129,16 +129,8 @@ String ipAddress() {
 	return WiFi.localIP().toString();
 }
 
-String debugInfo() {
-	return String(millis()) + ":" + freeHeap() + ":" + powerSupply() + ":: ";
-}
-
 String powerSupply() {
 	return String((float)ESP.getVcc() / KB);
-}
-
-String freeHeap() {
-	return String((float)ESP.getFreeHeap() / KB);
 }
 
 String htmlReplaceSpecialChars(String NewData) {
@@ -249,7 +241,7 @@ void loop(void) {
 
 	while (Serial.available()) {
 
-		/*		serialBuffer += char(Serial.read()); //gets one byte from serial buffer
+				serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 
 				if (serialBuffer.endsWith("\n")) { // check string termination
 						if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
@@ -259,12 +251,7 @@ void loop(void) {
 
 					serialBuffer = "";
 				}
-
-			}
-		*/
-		//dataBuffer.WriteStringToBuffer(Serial.readString());
-		dataBuffer.WriteByteToBuffer(Serial.read());
-		yield(); //time for wifi routines
+		yield(); //time for wifi routines while inside loop
 	}
 
 	delay(30); //allow serial buffer to fill up

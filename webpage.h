@@ -70,6 +70,8 @@ textarea {
     background: white;
     box-sizing: border-box;
     min-height: 500px;
+	overflow-y: scroll;
+	overflow-x: hidden;
 }
 
 .textbox {
@@ -109,8 +111,8 @@ input:hover,input:focus {border: 2px solid grey}
 <p class="textbox border">
 	Network SSID: {{wifiSSID}}<br>
 	IP Address: {{ipAddress}}<br>
-	Free Memory: {{freeHeap}} Kb<br>
-	Used Memory: {{usedRam}} Kb<br>
+	Buffer Size: {{bufferSize}} Kb<br>
+	Free Memory: {{usedRam}} Kb<br>
 	Battery: {{powerSupply}} V
 </p>
 
@@ -167,7 +169,7 @@ if(button.value==1){
         
 <article class='article'>
 <p>Buffer Contents</p>
-<textarea class='border' readonly>
+<textarea class='border' readonly accept-charset="UTF-8" >
 {{dataBuffer}}
 </textarea>
 </article>

@@ -4,8 +4,8 @@
 	/*****************************************************************************/
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
-	static const int  BUFFER_SIZE = 6000;			//Bytes (x2 + 4K < 20KB)
-	const char HEX_ARRAY[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+	static const int  BUFFER_SIZE = 5512;			//Bytes (x2 + 4K < 20KB)
+
 
 	struct MemoryBuffer 
 	{
@@ -49,34 +49,18 @@
 	}
 
 	/*****************************************************************************/
-	/*	This member function converts one byte to a displayable text string
-	/*****************************************************************************/
-	String ConvertByteToString(byte data, int datatype)
-	{
-		unsigned int nibble = data;
-		String output = String(HEX_ARRAY[nibble >> 4] + HEX_ARRAY[0x0F & nibble]);
-
-		if (datatype) {	//as hex text ex:" 3C"
-			return (" " + output);
-		}
-		else {	//as html text ex "&#x3C;"
-			return ("&#x" + output);
-		}
-	}
-
-	/*****************************************************************************/
 	/*	This member function returns the contents of the whole buffer
 	/*****************************************************************************/
-	String ReadStringFromBuffer(int datatype) 
+	String ReadStringFromBuffer() 
 	{
 		String SavedData = "";
 
 		if (IsBufferFull == true){
-			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE, datatype);
+			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE);
 		}
 
 		if (CurrentBufferPosition != 0) {
-			SavedData += ReadStringFromRange(0, CurrentBufferPosition, datatype);
+			SavedData += ReadStringFromRange(0, CurrentBufferPosition);
 		}
 
 		return SavedData;
@@ -85,13 +69,13 @@
 	/*****************************************************************************/
 	/*	This member function returns a range of contents from the buffer
 	/*****************************************************************************/
-	String  ReadStringFromRange(unsigned int StartPosition, unsigned int EndPostion, int datatype)
+	String  ReadStringFromRange(unsigned int StartPosition, unsigned int EndPostion)
 	{
 		String Result = "";
 		if (StartPosition < EndPostion) //EndPosition will never be returned!
 		{
 			for (unsigned int Index = StartPosition; Index < EndPostion; Index++){
-				Result += ConvertByteToString(MEMORY_BUFFER[Index], datatype);
+				Result += char(MEMORY_BUFFER[Index]);
 			}
 		}
 		return  Result;
