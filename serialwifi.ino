@@ -13,7 +13,7 @@
 static const int  KB	= 1024;
 static const int  PORT  = 80;
 static const int  SERIAL_BAUDRATE = 115200;
-static const int  EEPROM_SIZE	  = 330;			//Size can be anywhere between 4 and 4096 bytes
+static const int  EEPROM_SIZE	  = 330;		//Size can be anywhere between 4 and 4096 bytes
 static const int  ROM_BANK_SIZE	  = 30;			//bytes long
 static const int  SERIAL_TIMEOUT  = 1000;		//ms
 static const char*  wifiSSID	  = "(-_-)";
@@ -77,7 +77,7 @@ void handleSave() {
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
 
-	ESP.reset();
+	ESP.restart();
 }
 
 void handleNotFound() {
@@ -249,21 +249,23 @@ void loop(void) {
 
 	while (Serial.available()) {
 
-			serialBuffer += char(Serial.read()); //gets one byte from serial buffer
-			
-			if (serialBuffer.endsWith("\n")) { // check string termination
-					if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
-						serialBuffer += " --> FAULT FOUND! <-- \n";
-					}
-				dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
+		/*		serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 
-				serialBuffer = "";
+				if (serialBuffer.endsWith("\n")) { // check string termination
+						if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
+							serialBuffer += " --> FAULT FOUND! <-- \n";
+						}
+					dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
+
+					serialBuffer = "";
+				}
+
 			}
-			
-		}
-		
+		*/
 		//dataBuffer.WriteStringToBuffer(Serial.readString());
-		//dataBuffer.WriteByteToBuffer(Serial.read());
+		dataBuffer.WriteByteToBuffer(Serial.read());
+		yield(); //time for wifi routines
+	}
 
-	delay(100);
+	delay(30); //allow serial buffer to fill up
 }

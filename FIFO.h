@@ -4,13 +4,14 @@
 	/*****************************************************************************/
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
-	static const int  BUFFER_SIZE = 6700;			//Bytes (x2 + 4K < 20KB)
+	static const int  BUFFER_SIZE = 6000;			//Bytes (x2 + 4K < 20KB)
+	const char HEX_ARRAY[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
 
 	struct MemoryBuffer 
 	{
 
 		unsigned int CurrentBufferPosition;
-		char MEMORY_BUFFER[BUFFER_SIZE];
+		byte MEMORY_BUFFER[BUFFER_SIZE];
 		bool IsBufferFull;
 
 	/*****************************************************************************/
@@ -48,18 +49,34 @@
 	}
 
 	/*****************************************************************************/
+	/*	This member function converts one byte to a displayable text string
+	/*****************************************************************************/
+	String ConvertByteToString(byte data, int datatype)
+	{
+		unsigned int nibble = data;
+		String output = String(HEX_ARRAY[nibble >> 4] + HEX_ARRAY[0x0F & nibble]);
+
+		if (datatype) {	//as hex text ex:" 3C"
+			return (" " + output);
+		}
+		else {	//as html text ex "&#x3C;"
+			return ("&#x" + output);
+		}
+	}
+
+	/*****************************************************************************/
 	/*	This member function returns the contents of the whole buffer
 	/*****************************************************************************/
-	String ReadStringFromBuffer() 
+	String ReadStringFromBuffer(int datatype) 
 	{
 		String SavedData = "";
 
 		if (IsBufferFull == true){
-			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE);
+			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE, datatype);
 		}
 
 		if (CurrentBufferPosition != 0) {
-			SavedData += ReadStringFromRange(0, CurrentBufferPosition);
+			SavedData += ReadStringFromRange(0, CurrentBufferPosition, datatype);
 		}
 
 		return SavedData;
@@ -68,13 +85,13 @@
 	/*****************************************************************************/
 	/*	This member function returns a range of contents from the buffer
 	/*****************************************************************************/
-	String  ReadStringFromRange(unsigned int StartPosition, unsigned int EndPostion)
+	String  ReadStringFromRange(unsigned int StartPosition, unsigned int EndPostion, int datatype)
 	{
 		String Result = "";
 		if (StartPosition < EndPostion) //EndPosition will never be returned!
 		{
 			for (unsigned int Index = StartPosition; Index < EndPostion; Index++){
-				Result += MEMORY_BUFFER[Index];
+				Result += ConvertByteToString(MEMORY_BUFFER[Index], datatype);
 			}
 		}
 		return  Result;
@@ -99,8 +116,8 @@
 
 	/*****************************************************************************/
 	/*	This member function writes a byte into the buffer
-	/*****************************************************************************
-	void WriteByteToBuffer(char NewData)
+	/*****************************************************************************/
+	void WriteByteToBuffer(byte NewData)
 	{
 
 		//Serial.println("Line " + String(CurrentBufferPosition) + " :: ");
@@ -112,7 +129,7 @@
 			CurrentBufferPosition = 0;
 			IsBufferFull = true;
 		}
-	}*/
+	}
 
 };
 
