@@ -10,12 +10,12 @@
 #include "webpage.h"
 #include "FIFO.h"
 
-static const int  KB	= 1024;
-static const int  PORT  = 80;
-static const int  SERIAL_BAUDRATE = 115200;
-static const int  EEPROM_SIZE	  = 330;		//Size can be anywhere between 4 and 4096 bytes
-static const int  ROM_BANK_SIZE	  = 30;			//bytes long
-static const int  SERIAL_TIMEOUT  = 1000;		//ms
+static const size_t  KB	= 1024;
+static const size_t  PORT  = 80;
+static const size_t  SERIAL_BAUDRATE = 115200;
+static const size_t  EEPROM_SIZE	  = 330;		//Size can be anywhere between 4 and 4096 bytes
+static const size_t  ROM_BANK_SIZE	  = 30;			//bytes long
+static const size_t  SERIAL_TIMEOUT  = 1000;		//ms
 static const char*  wifiSSID	  = "(-_-)";
 static const char*  wifiPassword  = "monteiro";
 static const char*  hostName	  = "serialwifi";
@@ -28,24 +28,21 @@ String dataFormatRadio;
 String serialBuffer;
 MemoryBuffer dataBuffer;
 
-ADC_MODE(ADC_VCC);
-ESP8266WebServer server(PORT);
+ADC_MODE(ADC_VCC);					//needed to return voltage reading from ESP
+ESP8266WebServer server(PORT);		
 
 
 void handleRoot() {
 	Serial.println("Handling request: Index..");
+
+	String Index = FPSTR(HTTP_WEBSITE);		// get static webpage part residing in flash memory ~4Kb
 	
-	// get static webpage part residing in flash memory ~4Kb
-	String Index = FPSTR(HTTP_WEBSITE);	
-
-	Serial.println("replacing text strings..");
-
-	Index.replace("{{dataBuffer}}", htmlReplaceSpecialChars(dataBuffer.ReadStringFromBuffer()));
+	Index.replace("{{dataBuffer}}", dataBuffer.ReadHexStringFromBuffer());
 	Index.replace("{{wifiSSID}}", String(wifiSSID));
 	Index.replace("{{ipAddress}}", ipAddress());
 	Index.replace("{{powerSupply}}", powerSupply());
-	Index.replace("{{emailAddress}}", htmlReplaceSpecialChars(emailAddress));
-	Index.replace("{{faultCommand}}", htmlReplaceSpecialChars(faultCommand));
+	Index.replace("{{emailAddress}}", emailAddress);
+	Index.replace("{{faultCommand}}", faultCommand);
 	Index.replace("{{bufferSize}}", String((float)dataBuffer.GetCurrentSize() / KB));
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
@@ -85,13 +82,13 @@ void handleNotFound() {
 	server.send(404, "text/plain", "404: Not found");
 }
 
-void EEPROM_SAVE(int BankNumber, String NewData) {
+void EEPROM_SAVE(size_t BankNumber, String NewData) {
 
 	BankNumber *= ROM_BANK_SIZE;
 	char Data[ROM_BANK_SIZE];
 	NewData.toCharArray(Data, ROM_BANK_SIZE);
 
-	for (int i = 0; i < ROM_BANK_SIZE; i++) {
+	for (size_t i = 0; i < ROM_BANK_SIZE; i++) {
 		EEPROM.write(BankNumber + i, Data[i]);
 		//Serial.print(char(Data[i]));
 
@@ -101,12 +98,12 @@ void EEPROM_SAVE(int BankNumber, String NewData) {
 	EEPROM.commit();
 }
 
-String EEPROM_READ(int BankNumber) {
+String EEPROM_READ(size_t BankNumber) {
 
 	BankNumber *= ROM_BANK_SIZE;
 	char Data[ROM_BANK_SIZE];
 
-	for (int i = 0; i < ROM_BANK_SIZE; i++) {
+	for (size_t i = 0; i < ROM_BANK_SIZE; i++) {
 		Data[i] = EEPROM.read(BankNumber + i);
 		//Serial.print(char(Data[i]));
 
@@ -133,27 +130,13 @@ String powerSupply() {
 	return String((float)ESP.getVcc() / KB);
 }
 
-String htmlReplaceSpecialChars(String NewData) {
-	NewData.replace("&", "&amp;");
-	NewData.replace(">", "&gt;");
-	NewData.replace("<", "&lt;");
-	NewData.replace("<", "&lt;");
-	NewData.replace("\'", "&apos;");
-	NewData.replace("\"", "&quot;");
-	return NewData;
-}
-
 void setSerialBaudrate(String option) {
 
-	option.remove(0,6); //option0
-	int baud = option.toInt(); 
-
-	//Serial.print("Changing serial baud to: ");
-	//Serial.println(baud);
+	option.remove(0,6);				//remove text part of the string e.g.'option'
+	size_t baud = option.toInt();	//and convert the remaining number to an integer 
 
 	switch (baud)
 	{
-
 	case 0: baud = 115200; break;
 	case 1: baud = 57600; break;
 	case 2: baud = 38400; break;
@@ -243,12 +226,11 @@ void loop(void) {
 
 				serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 
-				if (serialBuffer.endsWith("\n")) { // check string termination
+				if (serialBuffer.endsWith("\n") || serialBuffer.length() > 200) { // check string termination or full
 						if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
 							serialBuffer += " --> FAULT FOUND! <-- \n";
 						}
 					dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
-
 					serialBuffer = "";
 				}
 		yield(); //time for wifi routines while inside loop

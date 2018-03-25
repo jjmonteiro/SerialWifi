@@ -149,7 +149,7 @@ if(button.value==1){
   
   <br>
 	<label>Ascii
-	  <input type='radio' name='radio' value='radio0' {{radio0}}>
+	  <input id='radio' type='radio' name='radio' value='radio0' {{radio0}}>
 	</label>
 	<label>Byte
 	  <input type='radio' name='radio' value='radio1' {{radio1}}>
@@ -164,21 +164,33 @@ if(button.value==1){
 </form>
 </nav>
 
-
 <!---RIGHT PANEL--->
         
 <article class='article'>
 <p>Buffer Contents</p>
-<textarea class='border' readonly accept-charset="UTF-8" >
-{{dataBuffer}}
+<textarea class='border' id='text' readonly>
 </textarea>
 </article>
 
 <footer>Copyright &copy; 2018 Joaquim Monteiro</footer>
-</div>  
+</div> 
+<script>
+var str, strLen, output, temp, i;
+str = "{{dataBuffer}}";
+strLen = str.length;
+output = "";
+for (i = 0; i < strLen; i++) {
+temp = str.charAt(i) + str.charAt(i+1);
+    if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
+	output += "&#x" + temp + ";"; 
+    }else{
+    output += str.charAt(i) + str.charAt(i+1) + " ";      
+	}
+i++;
+}
+document.getElementById("text").innerHTML = output;
+</script>
 </body>  
 </html>
-
-
 
 )=====";
