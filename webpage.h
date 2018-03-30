@@ -7,7 +7,6 @@ const char HTTP_WEBSITE[] PROGMEM = R"=====(
 <html>
   <head>
   <title>Serial Wifi Debugger</title>
-  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -76,7 +75,7 @@ textarea {
 
 .textbox {
     width: 100%;
-    min-height: 5%;
+    min-height: 7%;
     margin: 5px 0;
     padding: 8px;
     font-family: "Arial";
@@ -89,16 +88,21 @@ textarea {
 
 .center {text-align: center}
 
-input:hover,input:focus {border: 2px solid grey}
+input:hover {border: 2px solid grey}
+input:active {border: 2px solid #ccc}
+select:hover {border: 2px solid grey}
+select:active {border: 2px solid #ccc}
+
 .button {
-    width: 45%;
+    width: 30%;
     display: inline;
+    margin: 1%;
 }
 
 </style>
 </head>
 
-<body>
+<body onload="javascript:websocket()";>
 
 <div class="flex-container">
 <header>
@@ -108,14 +112,17 @@ input:hover,input:focus {border: 2px solid grey}
 <!---LEFT PANEL---><nav class="nav">
 
 <p>Informations</p>
-<p class="textbox border">
-	Network SSID: {{wifiSSID}}<br>
-	IP Address: {{ipAddress}}<br>
-	Buffer Size: {{bufferSize}} Kb<br>
-	Free Memory: {{usedRam}} Kb<br>
-	Battery: {{powerSupply}} V
-</p>
 
+<ul class="textbox border" style="list-style-type:none">
+  <li>Network SSID: {{wifiSSID}}</li>
+  <li>IP Address: {{ipAddress}}</li>
+  <li id='bufferSize'></li>
+  <li id='freeRam'></li>
+  <li id='powerSupply'></li>
+</ul>
+<ul class="textbox border" style="list-style-type:none">
+  <li id='status'></li>
+</ul>
 <br>
 <p>Configurations</p>
 
@@ -125,10 +132,7 @@ if(button.value==1){
 	} else {
 		click1.value='Restarting..';
 	}">
-
-	<input class='textbox border' type='email' placeholder='Email Address' maxlength='40' name='text1' value='{{emailAddress}}' required>
-	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='40' name='text2' value='{{faultCommand}}' required>
-
+	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='20' name='text2' value='{{faultCommand}}' required>
 <br>
 <p>Data Format</p> 
     
@@ -159,8 +163,9 @@ if(button.value==1){
   <br>
   <br>
 		<input type='hidden' name='button' value='0'>
-		<input class='textbox border button' type='submit' name='click0' value='Save' onclick="button.value='1'" style='float:left'>
-    	<input class='textbox border button' type='submit' name='click1' value='Restart' onclick="button.value='0'" style='float:right'>
+		<input class='textbox border button' type='submit' name='click0' value='Save' onclick="button.value='1'" >
+    	<input class='textbox border button' type='submit' name='click1' value='Restart' onclick="button.value='0'" >
+        <input class='textbox border button' type='button' name='click2' value='Clear' onclick="document.getElementById('dataBuffer').innerHTML = ''" >
 </form>
 </nav>
 
@@ -168,29 +173,46 @@ if(button.value==1){
         
 <article class='article'>
 <p>Buffer Contents</p>
-<textarea class='border' id='text' readonly>
+<textarea class='border' id='dataBuffer' readonly>
 </textarea>
 </article>
 
 <footer>Copyright &copy; 2018 Joaquim Monteiro</footer>
 </div> 
 <script>
+function websocket() {
+var websock;
+var status = document.getElementById('status');
+websock = new WebSocket('ws://{{ipAddress}}:81/');
+
+    websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
+    websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
+    websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
+    websock.onmessage = function(evt) {
+  		var data = evt.data;
+  		var dataparts = data.split(';');
+  		document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
+  		document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
+  		document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
+  		document.getElementById('dataBuffer').innerHTML += decode(dataparts[3]);
+  	};
+}
+
+function decode(str){
 var str, strLen, output, temp, i;
-str = "{{dataBuffer}}";
 strLen = str.length;
 output = "";
-for (i = 0; i < strLen; i++) {
-temp = str.charAt(i) + str.charAt(i+1);
-    if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
-	output += "&#x" + temp + ";"; 
-    }else{
-    output += str.charAt(i) + str.charAt(i+1) + " ";      
+	for (i = 0; i < strLen; i++) {
+		temp = str.charAt(i) + str.charAt(++i);
+    	if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
+		output += "&#x" + temp + ";"; 
+    	}else{
+    	output += temp + " ";      
+		}
 	}
-i++;
+return output;
 }
-document.getElementById("text").innerHTML = output;
 </script>
 </body>  
 </html>
-
 )=====";

@@ -6,7 +6,7 @@
 	/*****************************************************************************/
 	static const size_t  BUFFER_SIZE = 3000;			//Bytes (x2 + 4K < 20KB)
 
-	struct MemoryBuffer 
+	struct MemoryBuffer
 	{
 
 		size_t CurrentBufferPosition;

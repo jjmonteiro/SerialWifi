@@ -6,21 +6,21 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
 #include <EEPROM.h>
 #include "webpage.h"
 #include "FIFO.h"
 
-static const size_t  KB	= 1024;
-static const size_t  PORT  = 80;
-static const size_t  SERIAL_BAUDRATE = 115200;
-static const size_t  EEPROM_SIZE	  = 330;		//Size can be anywhere between 4 and 4096 bytes
-static const size_t  ROM_BANK_SIZE	  = 30;			//bytes long
-static const size_t  SERIAL_TIMEOUT  = 1000;		//ms
+
+static const size_t  KB	= 1024;						//1Kb = 1024bits
+static const size_t  EEPROM_SIZE	  = 300;		//Max available size for the EEPROM data
+static const size_t  ROM_BANK_SIZE	  = 30;			//size of each memory bank (10 banks: 0-9) 
+static const size_t  SERIAL_TIMEOUT  = 1000;		//serial timeout in ms
+
 static const char*  wifiSSID	  = "(-_-)";
 static const char*  wifiPassword  = "monteiro";
 static const char*  hostName	  = "serialwifi";
 
-String emailAddress;
 String faultCommand;
 String baudRateOption;
 String dataFormatRadio;
@@ -28,25 +28,20 @@ String dataFormatRadio;
 String serialBuffer;
 MemoryBuffer dataBuffer;
 
-ADC_MODE(ADC_VCC);					//needed to return voltage reading from ESP
-ESP8266WebServer server(PORT);		
-
+ADC_MODE(ADC_VCC);									//needed to return voltage reading from ESP
+ESP8266WebServer server(80);						//webserver default port
+WebSocketsServer webSocket = WebSocketsServer(81);  //websocket default port
 
 void handleRoot() {
 	Serial.println("Handling request: Index..");
 
-	String Index = FPSTR(HTTP_WEBSITE);		// get static webpage part residing in flash memory ~4Kb
-	
-	Index.replace("{{dataBuffer}}", dataBuffer.ReadHexStringFromBuffer());
+	String Index = FPSTR(HTTP_WEBSITE);		// get static webpage part residing in flash memory ~5Kb
+
 	Index.replace("{{wifiSSID}}", String(wifiSSID));
 	Index.replace("{{ipAddress}}", ipAddress());
-	Index.replace("{{powerSupply}}", powerSupply());
-	Index.replace("{{emailAddress}}", emailAddress);
 	Index.replace("{{faultCommand}}", faultCommand);
-	Index.replace("{{bufferSize}}", String((float)dataBuffer.GetCurrentSize() / KB));
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
-	Index.replace("{{usedRam}}", String((float)(ESP.getFreeHeap() - Index.length() - dataBuffer.GetCurrentSize()) / KB));
 
 	server.sendHeader("Content-Length", String(Index.length()));
 	server.send(200, "text/html", Index);
@@ -55,25 +50,25 @@ void handleRoot() {
 
 void handleSave() {
 
-	if (server.arg(4).toInt()) {				//button			
+	if (server.arg(3).toInt()) {				//save button			
 		Serial.println("Saving server data..");	
-		emailAddress = server.arg(0);			//text1
-		faultCommand = server.arg(1);			//text2
-		baudRateOption = server.arg(2);			//option
-		dataFormatRadio = server.arg(3);		//radio
 
-		EEPROM_SAVE(1, emailAddress);			//save values to EEPROM;
+		faultCommand = server.arg(0);			//text2
+		baudRateOption = server.arg(1);			//option
+		dataFormatRadio = server.arg(2);		//radio
+
+		//save values to EEPROM;
 		EEPROM_SAVE(2, faultCommand);
 		EEPROM_SAVE(3, baudRateOption);
 		EEPROM_SAVE(4, dataFormatRadio);
 
-		EEPROM_SAVE(10, "ROM_OK");
+		EEPROM_SAVE(0, "ROM_OK");
 	}
 
 	Serial.println("Done! Restarting..");
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
-
+	delay(100);
 	ESP.restart();
 }
 
@@ -114,7 +109,7 @@ String EEPROM_READ(size_t BankNumber) {
 }
 
 boolean romIsEmpty() {
-	if (EEPROM_READ(10) == "ROM_OK") {
+	if (EEPROM_READ(0) == "ROM_OK") {
 		return false;
 		}
 	else {
@@ -156,36 +151,46 @@ void setSerialBaudrate(String option) {
 	Serial.begin(baud, SERIAL_8N1);
 }
 
+void updateWebSocketData(String databuff) {
+	String dataPacket;
+
+	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB);
+	dataPacket += ";";
+	dataPacket += String((float)((ESP.getFreeHeap() - (2 * dataBuffer.GetCurrentSize())) / KB));
+	dataPacket += ";";
+	dataPacket += powerSupply();
+	dataPacket += ";";
+	dataPacket += databuff;
+
+	webSocket.broadcastTXT(dataPacket);
+}
+
 void setup(void) {
 	Serial.setTimeout(SERIAL_TIMEOUT);
-	//Serial.begin(SERIAL_BAUDRATE, SERIAL_8N1);
-	setSerialBaudrate("");
-	Serial.println();
-	Serial.println("=== ESP-01 Restart ===");
-	Serial.print("Serial Init. Baudrate: ");
-	Serial.println(SERIAL_BAUDRATE);
+	setSerialBaudrate("");		//set to default baudrate (115200_8N1)
 
+	Serial.println("=== ESP-01 Restart ===");
 	EEPROM.begin(EEPROM_SIZE);
 	Serial.print("Eeprom Conf. Size: ");
 	Serial.println(EEPROM_SIZE);
 	
 
 	if (romIsEmpty()){
-		Serial.println("Rom Empty.");
-		emailAddress = "";
+		Serial.println("Rom Empty.");	//zero all variables
 		faultCommand = "";
 		baudRateOption = "";
 		dataFormatRadio = "";
 	}
-	else{
-		Serial.println("Rom not Empty.");
-		emailAddress = EEPROM_READ(1);
+		else{
+		Serial.println("Rom not Empty.");//populate variables with each memory bank data
 		faultCommand = EEPROM_READ(2);
 		baudRateOption = EEPROM_READ(3);
 		dataFormatRadio = EEPROM_READ(4);
+
+		setSerialBaudrate(baudRateOption);//refresh new baudrate
 	}
 
-	setSerialBaudrate(baudRateOption);
+	
 	Serial.println("Network Init..");
 	WiFi.hostname(hostName);
 	Serial.print("Netbios: ");
@@ -195,11 +200,12 @@ void setup(void) {
 	Serial.print("Connecting to: ");
 	Serial.println(wifiSSID);
 
-	// Wait for connection
+		// Wait for connection
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
 		Serial.print(".");
 	}
+
 	Serial.println();
 	Serial.println("Connected!");
 
@@ -213,6 +219,8 @@ void setup(void) {
 
 	server.begin();
 	Serial.println("HTTP server started.");
+	webSocket.begin();
+	Serial.println("Websocket open.");
 }
 
 void loop(void) {
@@ -220,21 +228,24 @@ void loop(void) {
 	//Serial.println(debugInfo());
 
 	server.handleClient();
-
+	webSocket.loop();
 
 	while (Serial.available()) {
 
-				serialBuffer += char(Serial.read()); //gets one byte from serial buffer
+		serialBuffer += char(Serial.read()); //gets one byte from serial buffer
 
-				if (serialBuffer.endsWith("\n") || serialBuffer.length() > 200) { // check string termination or full
-						if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
-							serialBuffer += " --> FAULT FOUND! <-- \n";
-						}
-					dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
-					serialBuffer = "";
+		if (serialBuffer.endsWith("\n") || serialBuffer.length() > 200) { // check string termination or full
+				if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
+					serialBuffer += " --> FAULT FOUND! <-- \n";
+					updateWebSocketData(dataBuffer.ReadHexStringFromBuffer());
 				}
+			dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
+			//updateWebSocketData(serialBuffer);
+			serialBuffer = "";
+		}
 		yield(); //time for wifi routines while inside loop
 	}
-
-	delay(30); //allow serial buffer to fill up
+	
+	delay(100); //allow serial buffer to fill up
+	updateWebSocketData("");
 }
