@@ -1,17 +1,19 @@
-#ifndef MEMORY_BUFFER_H
-#define MEMORY_BUFFER_H
 
 	/*****************************************************************************/
 	/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
 	/*****************************************************************************/
-	static const size_t  BUFFER_SIZE = 3000;			//Bytes (x2 + 4K < 20KB)
 
-	struct MemoryBuffer
-	{
+#ifndef FIFO_H
+#define FIFO_H
 
-		size_t CurrentBufferPosition;
-		byte MEMORY_BUFFER[BUFFER_SIZE];
-		bool IsBufferFull;
+static const size_t  BUFFER_SIZE = 3000;			//Bytes (x2 + 4K < 20KB)
+
+struct MemoryBuffer
+{
+
+	size_t CurrentBufferPosition;
+	byte MEMORY_BUFFER[BUFFER_SIZE];
+	bool IsBufferFull;
 
 	/*****************************************************************************/
 	/*	This member function initializes the buffer
@@ -21,7 +23,7 @@
 		IsBufferFull = false;
 		CurrentBufferPosition = 0;
 
-		for (size_t Index = 0; (Index < BUFFER_SIZE); Index++){
+		for (size_t Index = 0; (Index < BUFFER_SIZE); Index++) {
 			MEMORY_BUFFER[Index] = 0;
 		}
 	}
@@ -50,17 +52,20 @@
 	/*****************************************************************************/
 	/*	This member function returns the contents of the whole buffer
 	/*****************************************************************************/
-	String ReadHexStringFromBuffer() 
+	String ReadHexStringFromBuffer()
 	{
 		String SavedData = "";
 
-		if (IsBufferFull == true){
+		if (IsBufferFull == true) {
 			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE);
 		}
 
 		if (CurrentBufferPosition != 0) {
 			SavedData += ReadStringFromRange(0, CurrentBufferPosition);
 		}
+
+		IsBufferFull = false;
+		CurrentBufferPosition = 0;
 
 		return SavedData;
 	}
@@ -71,16 +76,15 @@
 	String  ReadStringFromRange(size_t StartPosition, size_t EndPostion)
 	{
 		String Result, temp = "";
-		
+
 		if (StartPosition < EndPostion)						//EndPosition will never be returned!
 		{
-			for (size_t Index = StartPosition; Index < EndPostion; Index++){
+			for (size_t Index = StartPosition; Index < EndPostion; Index++) {
 				temp = String(MEMORY_BUFFER[Index], HEX);	//get byte at index and convert to hex string
 				if (temp.length() < 2) {					//because e.g.'0a' will be returned as 'a'
 					temp = "0" + temp;
 				}
 				Result += temp;
-				yield();									//time for wifi routines
 			}
 		}
 		return  Result;
@@ -93,13 +97,7 @@
 	{
 
 		for (size_t Index = 0; Index < NewData.length(); Index++) {
-			MEMORY_BUFFER[CurrentBufferPosition++] = NewData.charAt(Index);
-			
-			if (CurrentBufferPosition >= BUFFER_SIZE)
-			{
-				CurrentBufferPosition = 0;
-				IsBufferFull = true;
-			}
+			WriteByteToBuffer(NewData.charAt(Index));
 		}
 	}
 

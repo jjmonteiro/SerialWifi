@@ -116,12 +116,12 @@ select:active {border: 2px solid #ccc}
 <ul class="textbox border" style="list-style-type:none">
   <li>Network SSID: {{wifiSSID}}</li>
   <li>IP Address: {{ipAddress}}</li>
-  <li id='bufferSize'></li>
-  <li id='freeRam'></li>
-  <li id='powerSupply'></li>
+  <li id='bufferSize'>Buffer Size:</li>
+  <li id='freeRam'>Free Memory:</li>
+  <li id='powerSupply'>Battery:</li>
 </ul>
 <ul class="textbox border" style="list-style-type:none">
-  <li id='status'></li>
+  <li id='status'>Status: Idle</li>
 </ul>
 <br>
 <p>Configurations</p>
@@ -183,8 +183,17 @@ if(button.value==1){
 function websocket() {
 var websock;
 var status = document.getElementById('status');
-websock = new WebSocket('ws://{{ipAddress}}:81/');
 
+
+if (window.WebSocket) {
+    status.innerHTML = 'Status: Connecting..';
+
+		if(websock) {
+		websock.close();
+	        websock = null;
+		}
+
+    websock = new WebSocket('ws://{{ipAddress}}:81/');
     websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
     websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
     websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
@@ -196,6 +205,9 @@ websock = new WebSocket('ws://{{ipAddress}}:81/');
   		document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
   		document.getElementById('dataBuffer').innerHTML += decode(dataparts[3]);
   	};
+} else {
+    alert("This browser does not support Websockets!");
+}
 }
 
 function decode(str){

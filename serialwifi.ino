@@ -68,7 +68,10 @@ void handleSave() {
 	Serial.println("Done! Restarting..");
 	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
 	server.send(302, "text/plain", "");
-	delay(100);
+
+	webSocket.disconnect();
+	server.close();
+	delay(500);
 	ESP.restart();
 }
 
@@ -225,27 +228,18 @@ void setup(void) {
 
 void loop(void) {
 
-	//Serial.println(debugInfo());
-
+	delay(100); //allow serial buffer to fill up
 	server.handleClient();
 	webSocket.loop();
+	updateWebSocketData("");
 
 	while (Serial.available()) {
-
-		serialBuffer += char(Serial.read()); //gets one byte from serial buffer
-
-		if (serialBuffer.endsWith("\n") || serialBuffer.length() > 200) { // check string termination or full
-				if (serialBuffer.indexOf(faultCommand) >= 0) { //lookup for command
-					serialBuffer += " --> FAULT FOUND! <-- \n";
-					updateWebSocketData(dataBuffer.ReadHexStringFromBuffer());
-				}
-			dataBuffer.WriteStringToBuffer(serialBuffer); //write to buffer
-			//updateWebSocketData(serialBuffer);
-			serialBuffer = "";
+		String serialBuffer = Serial.readString(); //gets one byte from serial buffer
+		dataBuffer.WriteStringToBuffer(serialBuffer);	//write to buffer
+		if (serialBuffer.indexOf(faultCommand) >= 0) {	//lookup for fault command
+			updateWebSocketData(dataBuffer.ReadHexStringFromBuffer());
 		}
+		serialBuffer = "";	//empty
 		yield(); //time for wifi routines while inside loop
 	}
-	
-	delay(100); //allow serial buffer to fill up
-	updateWebSocketData("");
 }
