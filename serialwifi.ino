@@ -13,20 +13,21 @@
 
 
 static const size_t  KB	= 1024;						//1Kb = 1024bits
-static const size_t  EEPROM_SIZE	  = 300;		//Max available size for the EEPROM data
-static const size_t  ROM_BANK_SIZE	  = 30;			//size of each memory bank (10 banks: 0-9) 
-static const size_t  SERIAL_TIMEOUT  = 1000;		//serial timeout in ms
+static const size_t  EEPROM_SIZE = 300;		//Max available size for the EEPROM data
+static const size_t  ROM_BANK_SIZE = 30;			//size of each memory bank (10 banks: 0-9) 
+static const double  VERSION = 1.25;
 
 static const char*  wifiSSID	  = "(-_-)";
 static const char*  wifiPassword  = "monteiro";
 static const char*  hostName	  = "serialwifi";
+static const char*  FaultFoundStr = "----> FAULT FOUND! <----";
 
 String faultCommand;
 String baudRateOption;
 String dataFormatRadio;
 
-String serialBuffer;
 MemoryBuffer dataBuffer;
+
 
 ADC_MODE(ADC_VCC);									//needed to return voltage reading from ESP
 ESP8266WebServer server(80);						//webserver default port
@@ -40,6 +41,7 @@ void handleRoot() {
 	Index.replace("{{wifiSSID}}", String(wifiSSID));
 	Index.replace("{{ipAddress}}", ipAddress());
 	Index.replace("{{faultCommand}}", faultCommand);
+	Index.replace("{{version}}", String(VERSION));
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
 
@@ -169,9 +171,9 @@ void updateWebSocketData(String databuff) {
 }
 
 void setup(void) {
-	Serial.setTimeout(SERIAL_TIMEOUT);
-	setSerialBaudrate("");		//set to default baudrate (115200_8N1)
 
+	setSerialBaudrate("");		//set to default baudrate (115200_8N1)
+	Serial.setTimeout(500);
 	Serial.println("=== ESP-01 Restart ===");
 	EEPROM.begin(EEPROM_SIZE);
 	Serial.print("Eeprom Conf. Size: ");
@@ -189,6 +191,9 @@ void setup(void) {
 		faultCommand = EEPROM_READ(2);
 		baudRateOption = EEPROM_READ(3);
 		dataFormatRadio = EEPROM_READ(4);
+		Serial.println(faultCommand);
+		Serial.println(baudRateOption);
+		Serial.println(dataFormatRadio);
 
 		setSerialBaudrate(baudRateOption);//refresh new baudrate
 	}
@@ -224,22 +229,56 @@ void setup(void) {
 	Serial.println("HTTP server started.");
 	webSocket.begin();
 	Serial.println("Websocket open.");
+	sendWebSocketHexString("");
 }
+
+void sendWebSocketHexString(String NewData) {
+	String dataPacket;
+
+	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB);
+	dataPacket += ";";
+	dataPacket += String((float)((ESP.getFreeHeap() - (2 * dataBuffer.GetCurrentSize())) / KB));
+	dataPacket += ";";
+	dataPacket += powerSupply();
+	dataPacket += ";";
+
+	webSocket.broadcastTXT(dataPacket + NewData);
+
+}
+
+void sendWebSocketTextString(String NewData) {
+
+	String tempStr;
+
+	for (size_t Index = 0; Index < NewData.length(); Index++) {
+		tempStr = String(NewData.charAt(Index), HEX);
+		if (tempStr.length() < 2) {					//because e.g.'0a' will be returned as 'a'
+			tempStr = "0" + tempStr;
+		}
+		sendWebSocketHexString(tempStr);
+	}
+}
+
 
 void loop(void) {
 
 	delay(100); //allow serial buffer to fill up
 	server.handleClient();
 	webSocket.loop();
-	updateWebSocketData("");
+	sendWebSocketHexString("");
 
 	while (Serial.available()) {
-		String serialBuffer = Serial.readString(); //gets one byte from serial buffer
-		dataBuffer.WriteStringToBuffer(serialBuffer);	//write to buffer
-		if (serialBuffer.indexOf(faultCommand) >= 0) {	//lookup for fault command
-			updateWebSocketData(dataBuffer.ReadHexStringFromBuffer());
+
+		String tempBuffer = Serial.readStringUntil('\n');
+
+		if (faultCommand) {
+			dataBuffer.WriteStringToBuffer(tempBuffer);
+			if (tempBuffer.indexOf(faultCommand) >= 0)	//lookup for fault command
+				sendWebSocketHexString(dataBuffer.ReadHexStringFromBuffer());
 		}
-		serialBuffer = "";	//empty
-		yield(); //time for wifi routines while inside loop
+		else {
+				sendWebSocketTextString(tempBuffer);
+		}
+		yield();
 	}
 }

@@ -1,6 +1,6 @@
 C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\serialwifi.cpp.o: \
  C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\serialwifi.cpp \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Arduino.h \
+ C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/arduino.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/libc/xtensa-lx106-elf/include/stdlib.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/libc/xtensa-lx106-elf/include/machine/ieeefp.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/libc/xtensa-lx106-elf/include/_ansi.h \
@@ -49,6 +49,7 @@ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\seri
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Printable.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/uart.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Esp.h \
+ C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Arduino.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Updater.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/flash_utils.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/MD5Builder.h \

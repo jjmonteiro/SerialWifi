@@ -7,12 +7,12 @@ const char HTTP_WEBSITE[] PROGMEM = R"=====(
 <html>
   <head>
   <title>Serial Wifi Debugger</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
 
 <style>
 
 body {
-    font-family: "Arial";
+    font-family: 'Arial';
     font-size: 16px;
     color: black;
     line-height: 1;
@@ -78,7 +78,7 @@ textarea {
     min-height: 7%;
     margin: 5px 0;
     padding: 8px;
-    font-family: "Arial";
+    font-family: 'Arial';
     font-size: 14px;
     color: black;
     line-height: 1.3;
@@ -99,21 +99,26 @@ select:active {border: 2px solid #ccc}
     margin: 1%;
 }
 
+.ver {
+    font-size: 9px;
+    color: #ccc;
+}
 </style>
 </head>
 
-<body onload="javascript:websocket()";>
+<body onload='javascript:websocket()';>
 
-<div class="flex-container">
+<div class='flex-container'>
 <header>
   <h1>Serial Wifi Debugger</h1>
+  <p class='ver' align='right' >ver.{{version}}</p>
 </header>
 
-<!---LEFT PANEL---><nav class="nav">
+<!---LEFT PANEL---><nav class='nav'>
 
 <p>Informations</p>
 
-<ul class="textbox border" style="list-style-type:none">
+<ul class='textbox border' style='list-style-type:none'>
   <li>Network SSID: {{wifiSSID}}</li>
   <li>IP Address: {{ipAddress}}</li>
   <li id='bufferSize'>Buffer Size:</li>
@@ -132,7 +137,7 @@ if(button.value==1){
 	} else {
 		click1.value='Restarting..';
 	}">
-	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='20' name='text2' value='{{faultCommand}}' required>
+	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='20' name='text2' value='{{faultCommand}}'>
 <br>
 <p>Data Format</p> 
     
@@ -155,10 +160,12 @@ if(button.value==1){
 	<label>Ascii
 	  <input id='radio' type='radio' name='radio' value='radio0' {{radio0}}>
 	</label>
-	<label>Byte
+	<label>Hex
 	  <input type='radio' name='radio' value='radio1' {{radio1}}>
 	</label>
-  
+	<label>Autoscroll
+	  <input  type='checkbox' id='check1' checked>
+	</label>
   <br>
   <br>
   <br>
@@ -176,22 +183,19 @@ if(button.value==1){
 <textarea class='border' id='dataBuffer' readonly>
 </textarea>
 </article>
-
-<footer>Copyright &copy; 2018 Joaquim Monteiro</footer>
+<footer class='ver'>Copyright &copy; 2018 Joaquim Monteiro</footer>
 </div> 
+
 <script>
+var textarea = document.getElementById('dataBuffer');
 function websocket() {
 var websock;
 var status = document.getElementById('status');
 
-
 if (window.WebSocket) {
     status.innerHTML = 'Status: Connecting..';
 
-		if(websock) {
-		websock.close();
-	        websock = null;
-		}
+
 
     websock = new WebSocket('ws://{{ipAddress}}:81/');
     websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
@@ -203,7 +207,7 @@ if (window.WebSocket) {
   		document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
   		document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
   		document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
-  		document.getElementById('dataBuffer').innerHTML += decode(dataparts[3]);
+  		textarea.innerHTML += decode(dataparts[3]);
   	};
 } else {
     alert("This browser does not support Websockets!");
@@ -221,6 +225,8 @@ output = "";
     	}else{
     	output += temp + " ";      
 		}
+    if (document.getElementById("check1").checked)
+		textarea.scrollTop = textarea.scrollHeight;
 	}
 return output;
 }
