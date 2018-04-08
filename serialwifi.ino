@@ -50,33 +50,6 @@ void handleRoot() {
 	Serial.println("Request sent!");
 }
 
-void handleSave() {
-
-	if (server.arg(3).toInt()) {				//save button			
-		Serial.println("Saving server data..");	
-
-		faultCommand = server.arg(0);			//text2
-		baudRateOption = server.arg(1);			//option
-		dataFormatRadio = server.arg(2);		//radio
-
-		//save values to EEPROM;
-		EEPROM_SAVE(2, faultCommand);
-		EEPROM_SAVE(3, baudRateOption);
-		EEPROM_SAVE(4, dataFormatRadio);
-
-		EEPROM_SAVE(0, "ROM_OK");
-	}
-
-	Serial.println("Done! Restarting..");
-	server.sendHeader("Location", "/", true); //redirect to prevent resubmission
-	server.send(302, "text/plain", "");
-
-	webSocket.disconnect();
-	server.close();
-	delay(500);
-	ESP.restart();
-}
-
 void handleNotFound() {
 	Serial.println("Handling request: Not found");
 	server.send(404, "text/plain", "404: Not found");
@@ -151,23 +124,95 @@ void setSerialBaudrate(String option) {
 	default:
 		baud = 115200; break;
 	}
-
+	Serial.println("setting baud: " + String(baud));
 	Serial.flush();
 	Serial.begin(baud, SERIAL_8N1);
 }
 
-void updateWebSocketData(String databuff) {
+void sendWebSocketHexString(String NewData) {
 	String dataPacket;
 
 	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB);
 	dataPacket += ";";
-	dataPacket += String((float)((ESP.getFreeHeap() - (2 * dataBuffer.GetCurrentSize())) / KB));
+	dataPacket += String((float)ESP.getFreeHeap() / KB);
 	dataPacket += ";";
 	dataPacket += powerSupply();
 	dataPacket += ";";
-	dataPacket += databuff;
 
-	webSocket.broadcastTXT(dataPacket);
+	webSocket.broadcastTXT(dataPacket + NewData);
+
+}
+
+void sendWebSocketTextString(String NewData) {
+
+	String tempStr;
+
+	for (size_t Index = 0; Index < NewData.length(); Index++) {
+		tempStr = String(NewData.charAt(Index), HEX);
+		if (tempStr.length() < 2) {					//because e.g.'0a' will be returned as 'a'
+			tempStr = "0" + tempStr;
+		}
+		sendWebSocketHexString(tempStr);
+	}
+}
+
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) { //handle incoming data from the websocket
+
+	if (type == WStype_TEXT){
+		if (lenght) {
+			Serial.println("Saving server data..");
+			
+			String webConfigs = PtrToString(payload);
+
+			faultCommand = extractField(webConfigs, 0);			//text2
+			baudRateOption = extractField(webConfigs, 1);		//option
+			dataFormatRadio = extractField(webConfigs, 2);		//radio
+
+			setSerialBaudrate(baudRateOption);//refresh new baudrate
+
+			//save values to EEPROM;
+			EEPROM_SAVE(2, faultCommand);
+			EEPROM_SAVE(3, baudRateOption);
+			EEPROM_SAVE(4, dataFormatRadio);
+			EEPROM_SAVE(0, "ROM_OK");
+
+			Serial.println("Done saving. New data reloaded.");
+		}
+		else {
+			Serial.println("Restarting..");
+			webSocket.disconnect();
+			server.close();
+			ESP.reset();
+		}
+	}
+}
+
+String PtrToString(uint8_t *str) {
+	byte *p;
+	String result;
+	p = str;
+	while (*p) {
+		result += char(*p);
+		p++;
+	}
+	return result;
+}
+
+String extractField(String data, uint8_t field) {
+	
+	uint8_t i = 0;
+	String result = "";
+
+	for (uint8_t Index = 0; Index < data.length(); Index++) {
+		if (data.charAt(Index) == ';') {
+			i++;
+			Index++;
+		}
+		if (i == field) {
+			result += data.charAt(Index);
+		}
+	}
+	return result;
 }
 
 void setup(void) {
@@ -222,43 +267,16 @@ void setup(void) {
 	Serial.println(ipAddress());
 
 	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
-	server.on("/", HTTP_POST, handleSave); // when client saves changes
 	server.onNotFound(handleNotFound);     // When client requests an unknown webpage
 
 	server.begin();
 	Serial.println("HTTP server started.");
+
 	webSocket.begin();
+	webSocket.onEvent(webSocketEvent);
 	Serial.println("Websocket open.");
 	sendWebSocketHexString("");
 }
-
-void sendWebSocketHexString(String NewData) {
-	String dataPacket;
-
-	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB);
-	dataPacket += ";";
-	dataPacket += String((float)((ESP.getFreeHeap() - (2 * dataBuffer.GetCurrentSize())) / KB));
-	dataPacket += ";";
-	dataPacket += powerSupply();
-	dataPacket += ";";
-
-	webSocket.broadcastTXT(dataPacket + NewData);
-
-}
-
-void sendWebSocketTextString(String NewData) {
-
-	String tempStr;
-
-	for (size_t Index = 0; Index < NewData.length(); Index++) {
-		tempStr = String(NewData.charAt(Index), HEX);
-		if (tempStr.length() < 2) {					//because e.g.'0a' will be returned as 'a'
-			tempStr = "0" + tempStr;
-		}
-		sendWebSocketHexString(tempStr);
-	}
-}
-
 
 void loop(void) {
 

@@ -106,12 +106,11 @@ select:active {border: 2px solid #ccc}
 </style>
 </head>
 
-<body onload='javascript:websocket()';>
+<body onload='websocketget()'>
 
 <div class='flex-container'>
 <header>
   <h1>Serial Wifi Debugger</h1>
-  <p class='ver' align='right' >ver.{{version}}</p>
 </header>
 
 <!---LEFT PANEL---><nav class='nav'>
@@ -131,17 +130,12 @@ select:active {border: 2px solid #ccc}
 <br>
 <p>Configurations</p>
 
-<form accept-charset="UTF-8" action='/' method='POST' autocomplete='off' onsubmit="
-if(button.value==1){
-		click0.value='Saving..';
-	} else {
-		click1.value='Restarting..';
-	}">
-	<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='20' name='text2' value='{{faultCommand}}'>
+<form action='javascript:void(0)'>
+<input class='textbox border' type='text' placeholder='Lookup Command' maxlength='20' id='text2' value='{{faultCommand}}'>
 <br>
 <p>Data Format</p> 
     
-  <select class='textbox border' name='option'>
+  <select class='textbox border' id='option'>
     <option value='option0' {{option0}}>115200</option>
     <option value='option1' {{option1}}>57600</option>
     <option value='option2' {{option2}}>38400</option>
@@ -163,16 +157,11 @@ if(button.value==1){
 	<label>Hex
 	  <input type='radio' name='radio' value='radio1' {{radio1}}>
 	</label>
-	<label>Autoscroll
-	  <input  type='checkbox' id='check1' checked>
-	</label>
   <br>
   <br>
-  <br>
-		<input type='hidden' name='button' value='0'>
-		<input class='textbox border button' type='submit' name='click0' value='Save' onclick="button.value='1'" >
-    	<input class='textbox border button' type='submit' name='click1' value='Restart' onclick="button.value='0'" >
-        <input class='textbox border button' type='button' name='click2' value='Clear' onclick="document.getElementById('dataBuffer').innerHTML = ''" >
+	<input class='textbox border button' type='submit' name='click0' value='Save' onclick="websocketsend(text2.value + ';' + option.value + ';' + radio.value);alert('Configurations Saved.')">
+	<input class='textbox border button' type='button' name='click1' value='Restart' onclick='restart()' >
+    <input class='textbox border button' type='button' name='click2' value='Clear' onclick="document.getElementById('dataBuffer').innerHTML = ''">
 </form>
 </nav>
 
@@ -187,31 +176,37 @@ if(button.value==1){
 </div> 
 
 <script>
-var textarea = document.getElementById('dataBuffer');
-function websocket() {
+
 var websock;
+
+function websocketget() {
+
 var status = document.getElementById('status');
+var textarea = document.getElementById('dataBuffer');
 
-if (window.WebSocket) {
-    status.innerHTML = 'Status: Connecting..';
-
-
-
-    websock = new WebSocket('ws://{{ipAddress}}:81/');
-    websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
-    websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
-    websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
-    websock.onmessage = function(evt) {
-  		var data = evt.data;
-  		var dataparts = data.split(';');
-  		document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
-  		document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
-  		document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
-  		textarea.innerHTML += decode(dataparts[3]);
-  	};
-} else {
-    alert("This browser does not support Websockets!");
-}
+	if (window.WebSocket) {
+		status.innerHTML = 'Status: Connecting..';
+    
+		  if(websock) {
+			websock.close();
+			websock = null;
+		  }
+      
+		websock = new WebSocket('ws://{{ipAddress}}:81/');
+		websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
+		websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
+		websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
+		websock.onmessage = function(evt) {
+  			var data = evt.data;
+  			var dataparts = data.split(';');
+  			document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
+  			document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
+  			document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
+  			textarea.innerHTML += decode(dataparts[3]);
+  		};
+	} else {
+		alert("This browser does not support Websockets!");
+	}
 }
 
 function decode(str){
@@ -219,16 +214,34 @@ var str, strLen, output, temp, i;
 strLen = str.length;
 output = "";
 	for (i = 0; i < strLen; i++) {
-		temp = str.charAt(i) + str.charAt(++i);
-    	if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
-		output += "&#x" + temp + ";"; 
-    	}else{
-    	output += temp + " ";      
-		}
-    if (document.getElementById("check1").checked)
-		textarea.scrollTop = textarea.scrollHeight;
+	temp = str.charAt(i) + str.charAt(++i);
+    		if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
+				output += "&#x" + temp + ";"; 
+    		}else{
+    			output += temp + " ";      
+			}
 	}
 return output;
+}
+
+function websocketsend(data) {
+
+	if (!window.WebSocket)
+        return;
+
+    if (WebSocket.OPEN) {
+        websock.send(data);
+    } else {
+        alert("The socket is not open.");
+    }
+	
+}    
+
+function restart() {
+	if (confirm('Unsaved data will be lost! \nSure to restart device?')) {
+		websocketsend('');
+		setTimeout('location.reload()', 5000);
+	}
 }
 </script>
 </body>  
