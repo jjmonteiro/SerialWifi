@@ -1,0 +1,14 @@
+﻿Visual Micro free version. CTRL+click for secure purchase http://www.visualmicro.com/page/shop.aspx
+
+Compiling 'serialwifi' for 'Generic ESP8266 Module'
+A subdirectory or file C*: Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\core already exists
+Program size: 297,816 bytes (used 31% of a 958,448 byte maximum) (10.32 secs)
+Minimum Memory Usage: 41180 bytes (50% of a 81920 byte maximum)
+ 
+Uploading 'serialwifi' to 'Generic ESP8266 Module' using 'COM3'
+Uploading 301968 bytes from C:\Users\quimm\AppData\Local\Temp\VMBuilds\SERIAL~1\ESP826~1\Debug/SERIAL~1.BIN to flash at 0x00000000
+................................................................................ [ 27% ]
+................................................................................ [ 54% ]
+................................................................................ [ 81% ]
+.......................................................                          [ 100% ]
+	The upload process has finished.

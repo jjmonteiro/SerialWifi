@@ -10,24 +10,19 @@
 #include <EEPROM.h>
 #include "webpage.h"
 #include "FIFO.h"
+#include <WiFiManager.h>
 
 
-static const size_t  KB	= 1024;						//1Kb = 1024bits
+static const size_t  KB	= 1024;				//1Kb = 1024bits
 static const size_t  EEPROM_SIZE = 300;		//Max available size for the EEPROM data
-static const size_t  ROM_BANK_SIZE = 30;			//size of each memory bank (10 banks: 0-9) 
-static const double  VERSION = 1.25;
+static const size_t  ROM_BANK_SIZE = 30;	//size of each memory bank (10 banks: 0-9) 
 
-static const char*  wifiSSID	  = "(-_-)";
-static const char*  wifiPassword  = "monteiro";
 static const char*  hostName	  = "serialwifi";
-static const char*  FaultFoundStr = "----> FAULT FOUND! <----";
 
 String faultCommand;
 String baudRateOption;
 String dataFormatRadio;
-
 MemoryBuffer dataBuffer;
-
 
 ADC_MODE(ADC_VCC);									//needed to return voltage reading from ESP
 ESP8266WebServer server(80);						//webserver default port
@@ -38,10 +33,9 @@ void handleRoot() {
 
 	String Index = FPSTR(HTTP_WEBSITE);		// get static webpage part residing in flash memory ~5Kb
 
-	Index.replace("{{wifiSSID}}", String(wifiSSID));
-	Index.replace("{{ipAddress}}", ipAddress());
+	Index.replace("{{wifiSSID}}", String(WiFi.SSID()));
+	Index.replace("{{ipAddress}}", WiFi.localIP().toString());
 	Index.replace("{{faultCommand}}", faultCommand);
-	Index.replace("{{version}}", String(VERSION));
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
 
@@ -95,14 +89,6 @@ boolean romIsEmpty() {
 		}
 }
 
-String ipAddress() {
-	return WiFi.localIP().toString();
-}
-
-String powerSupply() {
-	return String((float)ESP.getVcc() / KB);
-}
-
 void setSerialBaudrate(String option) {
 
 	option.remove(0,6);				//remove text part of the string e.g.'option'
@@ -132,27 +118,22 @@ void setSerialBaudrate(String option) {
 void sendWebSocketHexString(String NewData) {
 	String dataPacket;
 
-	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB);
-	dataPacket += ";";
-	dataPacket += String((float)ESP.getFreeHeap() / KB);
-	dataPacket += ";";
-	dataPacket += powerSupply();
-	dataPacket += ";";
+	dataPacket += String((float)dataBuffer.GetCurrentSize() / KB) + ";";
+	dataPacket += String((float)ESP.getFreeHeap() / KB) + ";";
+	dataPacket += String((float)ESP.getVcc() / KB) + ";";
 
 	webSocket.broadcastTXT(dataPacket + NewData);
-
 }
 
 void sendWebSocketTextString(String NewData) {
 
-	String tempStr;
-
+	String HexChar;
 	for (size_t Index = 0; Index < NewData.length(); Index++) {
-		tempStr = String(NewData.charAt(Index), HEX);
-		if (tempStr.length() < 2) {					//because e.g.'0a' will be returned as 'a'
-			tempStr = "0" + tempStr;
+		HexChar = String(NewData.charAt(Index), HEX);
+		if (HexChar.length() < 2) {					//because e.g.'0a' will be returned as 'a'
+			HexChar = "0" + HexChar;
 		}
-		sendWebSocketHexString(tempStr);
+		sendWebSocketHexString(HexChar);
 	}
 }
 
@@ -161,8 +142,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 	if (type == WStype_TEXT){
 		if (lenght) {
 			Serial.println("Saving server data..");
-			
+
 			String webConfigs = PtrToString(payload);
+			Serial.println(webConfigs);
 
 			faultCommand = extractField(webConfigs, 0);			//text2
 			baudRateOption = extractField(webConfigs, 1);		//option
@@ -236,35 +218,17 @@ void setup(void) {
 		faultCommand = EEPROM_READ(2);
 		baudRateOption = EEPROM_READ(3);
 		dataFormatRadio = EEPROM_READ(4);
-		Serial.println(faultCommand);
-		Serial.println(baudRateOption);
-		Serial.println(dataFormatRadio);
-
 		setSerialBaudrate(baudRateOption);//refresh new baudrate
 	}
-
 	
 	Serial.println("Network Init..");
 	WiFi.hostname(hostName);
-	Serial.print("Netbios: ");
-	Serial.println(hostName);
 
-	WiFi.begin(wifiSSID, wifiPassword);
-	Serial.print("Connecting to: ");
-	Serial.println(wifiSSID);
-
-		// Wait for connection
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		Serial.print(".");
-	}
+	WiFiManager wifiManager;
+	wifiManager.autoConnect(hostName);
 
 	Serial.println();
 	Serial.println("Connected!");
-
-
-	Serial.print("IP address: ");
-	Serial.println(ipAddress());
 
 	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
 	server.onNotFound(handleNotFound);     // When client requests an unknown webpage
@@ -280,23 +244,35 @@ void setup(void) {
 
 void loop(void) {
 
-	delay(100); //allow serial buffer to fill up
-	server.handleClient();
-	webSocket.loop();
-	sendWebSocketHexString("");
+	size_t loopcounter = 0;
 
-	while (Serial.available()) {
+	while (true) {
+		server.handleClient();
+		webSocket.loop();
 
-		String tempBuffer = Serial.readStringUntil('\n');
-
-		if (faultCommand) {
-			dataBuffer.WriteStringToBuffer(tempBuffer);
-			if (tempBuffer.indexOf(faultCommand) >= 0)	//lookup for fault command
-				sendWebSocketHexString(dataBuffer.ReadHexStringFromBuffer());
+		if (loopcounter > 10000) { //update values ~200ms
+			sendWebSocketHexString("");
+			loopcounter = 0;
 		}
-		else {
+
+		while (Serial.available()) {
+
+			String tempBuffer = Serial.readStringUntil('\n');
+
+			if (faultCommand) {
+				dataBuffer.WriteStringToBuffer(tempBuffer);
+				if (tempBuffer.indexOf(faultCommand) >= 0) {//lookup for fault command
+					if (dataBuffer.IsBufferFull)
+						sendWebSocketHexString(dataBuffer.ReadStringFromRange(dataBuffer.GetCurrentPosition(), BUFFER_SIZE));
+					if (dataBuffer.GetCurrentPosition())
+						sendWebSocketHexString(dataBuffer.ReadStringFromRange(0, dataBuffer.GetCurrentPosition()));
+					dataBuffer.ResetCurrentPosition();
+				}
+			}
+			else {
 				sendWebSocketTextString(tempBuffer);
+			}
 		}
-		yield();
+		loopcounter++;
 	}
 }

@@ -6,7 +6,7 @@
 #ifndef FIFO_H
 #define FIFO_H
 
-static const size_t  BUFFER_SIZE = 5000;			//Bytes (x2 + 4K < 20KB)
+static const size_t  BUFFER_SIZE = 4000;			//Bytes (x2 + 4K < 20KB)
 
 struct MemoryBuffer
 {
@@ -24,7 +24,7 @@ struct MemoryBuffer
 		CurrentBufferPosition = 0;
 
 		for (size_t Index = 0; (Index < BUFFER_SIZE); Index++) {
-			MEMORY_BUFFER[Index] = 0;
+			MEMORY_BUFFER[Index] = NULL;
 		}
 	}
 
@@ -37,37 +37,24 @@ struct MemoryBuffer
 	}
 
 	/*****************************************************************************/
+	/*	This member function sets the current position on the buffer
+	/*****************************************************************************/
+	size_t ResetCurrentPosition()
+	{
+		IsBufferFull = false;
+		CurrentBufferPosition = 0;
+	}
+	/*****************************************************************************/
 	/*	This member function returns the current size of the buffer
 	/*****************************************************************************/
 	size_t GetCurrentSize()
 	{
-		if (IsBufferFull == true) {
+		if (IsBufferFull) {
 			return BUFFER_SIZE;
 		}
 		else {
 			return CurrentBufferPosition;
 		}
-	}
-
-	/*****************************************************************************/
-	/*	This member function returns the contents of the whole buffer
-	/*****************************************************************************/
-	String ReadHexStringFromBuffer()
-	{
-		String SavedData = "";
-
-		if (IsBufferFull == true) {
-			SavedData = ReadStringFromRange(CurrentBufferPosition, BUFFER_SIZE);
-		}
-
-		if (CurrentBufferPosition != 0) {
-			SavedData += ReadStringFromRange(0, CurrentBufferPosition);
-		}
-
-		IsBufferFull = false;
-		CurrentBufferPosition = 0;
-
-		return SavedData;
 	}
 
 	/*****************************************************************************/
@@ -80,14 +67,26 @@ struct MemoryBuffer
 		if (StartPosition < EndPostion)						//EndPosition will never be returned!
 		{
 			for (size_t Index = StartPosition; Index < EndPostion; Index++) {
-				temp = String(MEMORY_BUFFER[Index], HEX);	//get byte at index and convert to hex string
-				if (temp.length() < 2) {					//because e.g.'0a' will be returned as 'a'
-					temp = "0" + temp;
-				}
-				Result += temp;
+				Result += GetByteAsString(Index);				//get byte at index as hex string
 			}
 		}
 		return  Result;
+	}
+
+	/*****************************************************************************/
+	/*	This member function returns a byte from the buffer as String
+	/*****************************************************************************/
+	String  GetByteAsString(size_t Position)
+	{
+		String HexChar = "";
+		if (Position >= 0 && Position < BUFFER_SIZE) {
+			HexChar = String(MEMORY_BUFFER[Position], HEX);	//get byte at index and convert to hex string
+			MEMORY_BUFFER[Position] = NULL;					//clear Position
+			if (HexChar.length() < 2) {						//because '0a' will be returned as 'a'
+				HexChar = "0" + HexChar;
+			}
+		}
+		return  HexChar;
 	}
 
 	/*****************************************************************************/

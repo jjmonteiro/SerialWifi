@@ -169,7 +169,7 @@ select:active {border: 2px solid #ccc}
         
 <article class='article'>
 <p>Buffer Contents</p>
-<textarea class='border' id='dataBuffer' readonly>
+<textarea class='border' id='dataBuffer' name='dataBuffer' readonly>
 </textarea>
 </article>
 <footer class='ver'>Copyright &copy; 2018 Joaquim Monteiro</footer>
@@ -202,7 +202,10 @@ var textarea = document.getElementById('dataBuffer');
   			document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
   			document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
   			document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
-  			textarea.innerHTML += decode(dataparts[3]);
+  			if (dataparts[3].length){
+			textarea.innerHTML += decode(dataparts[3]);
+			textarea.scrollTop = textarea.scrollHeight;
+			}
   		};
 	} else {
 		alert("This browser does not support Websockets!");
