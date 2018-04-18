@@ -85,34 +85,4 @@ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\seri
  C:\Users\quimm\Documents\Arduino\libraries\arduinoWebSockets-master\src/WebSockets.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\EEPROM/EEPROM.h \
  C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\webpage.h \
- C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\FIFO.h \
- C:\Users\quimm\Documents\Arduino\libraries\WiFiManager-master/WiFiManager.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\DNSServer\src/DNSServer.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/WiFiUdp.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/Udp.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/include/slist.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/user_interface.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/os_type.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/ets_sys.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/ip_addr.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/opt.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwipopts.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/gluedebug.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/debug.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/arch.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/arch/cc.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip-err-t.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/mem.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/gluedebug.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/libc/xtensa-lx106-elf/include/limits.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/arch/cc.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip-git-hash.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/libc/xtensa-lx106-elf/include/sys/time.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/debug.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/def.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/ip4_addr.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/ip6_addr.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/lwip2/include/lwip/def.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/queue.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/spi_flash.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1/tools/sdk/include/gpio.h
+ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\FIFO.h

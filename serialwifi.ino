@@ -10,7 +10,6 @@
 #include <EEPROM.h>
 #include "webpage.h"
 #include "FIFO.h"
-#include <WiFiManager.h>
 
 
 static const size_t  KB	= 1024;				//1Kb = 1024bits
@@ -201,6 +200,7 @@ void setup(void) {
 
 	setSerialBaudrate("");		//set to default baudrate (115200_8N1)
 	Serial.setTimeout(500);
+	Serial.println();
 	Serial.println("=== ESP-01 Restart ===");
 	EEPROM.begin(EEPROM_SIZE);
 	Serial.print("Eeprom Conf. Size: ");
@@ -221,14 +221,7 @@ void setup(void) {
 		setSerialBaudrate(baudRateOption);//refresh new baudrate
 	}
 	
-	Serial.println("Network Init..");
-	WiFi.hostname(hostName);
-
-	WiFiManager wifiManager;
-	wifiManager.autoConnect(hostName);
-
-	Serial.println();
-	Serial.println("Connected!");
+	ConnectWiFi();
 
 	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
 	server.onNotFound(handleNotFound);     // When client requests an unknown webpage
@@ -240,6 +233,37 @@ void setup(void) {
 	webSocket.onEvent(webSocketEvent);
 	Serial.println("Websocket open.");
 	sendWebSocketHexString("");
+}
+
+void ConnectWiFi() {
+	Serial.println("Attempting WiFi connection..");
+	WiFi.hostname(hostName);
+
+	Serial.println("Attempting last known credentials..");
+	WiFi.begin();	//try last known credentials
+
+	for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 20); attempt++) {
+		delay(500);
+		Serial.print(".");
+	}
+
+	if (WiFi.status() != WL_CONNECTED) {
+		Serial.println("Failed.");
+		Serial.println("Attempting WPS connection..");
+		WiFi.beginWPSConfig();
+		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 20); attempt++) {
+			delay(500);
+			Serial.print(".");
+		}
+		Serial.println("Failed. Restarting..");
+		ESP.restart();
+	}
+
+	Serial.println();
+	Serial.println("Connected!");
+	Serial.println(WiFi.localIP());
+	Serial.println(WiFi.SSID());
+	Serial.println(WiFi.macAddress());
 }
 
 void loop(void) {
@@ -272,6 +296,7 @@ void loop(void) {
 			else {
 				sendWebSocketTextString(tempBuffer);
 			}
+		yield();
 		}
 		loopcounter++;
 	}
