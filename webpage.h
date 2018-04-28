@@ -1,5 +1,5 @@
 /*****************************************************************************/
-/*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
+/*  Serial Debugger over Wifi - UP840126 - University of Portsmouth
 /*****************************************************************************/
 
 const char HTTP_WEBSITE[] PROGMEM = R"=====(
@@ -69,8 +69,8 @@ textarea {
     background: white;
     box-sizing: border-box;
     min-height: 500px;
-	overflow-y: scroll;
-	overflow-x: hidden;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 .textbox {
@@ -151,16 +151,16 @@ select:active {border: 2px solid #ccc}
   </select>
   
   <br>
-	<label>Ascii
-	  <input id='radio' type='radio' name='radio' value='radio0' {{radio0}}>
-	</label>
-	<label>Hex
-	  <input type='radio' name='radio' value='radio1' {{radio1}}>
-	</label>
+  <label>Ascii
+    <input id='radio' type='radio' name='radio' value='radio0' {{radio0}}>
+  </label>
+  <label>Hex
+    <input type='radio' name='radio' value='radio1' {{radio1}}>
+  </label>
   <br>
   <br>
-	<input class='textbox border button' type='submit' name='click0' value='Save' onclick="websocketsend(text2.value + ';' + option.value + ';' + radio.value);alert('Configurations Saved.')">
-	<input class='textbox border button' type='button' name='click1' value='Restart' onclick='restart()' >
+  <input class='textbox border button' type='submit' name='click0' value='Save' onclick="websocketsend(text2.value + ';' + option.value + ';' + radio.value);alert('Configurations Saved.')">
+  <input class='textbox border button' type='button' name='click1' value='Restart' onclick='restart()' >
     <input class='textbox border button' type='button' name='click2' value='Clear' onclick="document.getElementById('dataBuffer').innerHTML = ''">
 </form>
 </nav>
@@ -184,52 +184,52 @@ function websocketget() {
 var status = document.getElementById('status');
 var textarea = document.getElementById('dataBuffer');
 
-	if (window.WebSocket) {
-		status.innerHTML = 'Status: Connecting..';
+  if (window.WebSocket) {
+    status.innerHTML = 'Status: Connecting..';
     
-		  if(websock) {
-			websock.close();
-			websock = null;
-		  }
+      if(websock) {
+      websock.close();
+      websock = null;
+      }
       
-		websock = new WebSocket('ws://{{ipAddress}}:81/');
-		websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
-		websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
-		websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
-		websock.onmessage = function(evt) {
-  			var data = evt.data;
-  			var dataparts = data.split(';');
-  			document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
-  			document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
-  			document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
-  			if (dataparts[3].length){
-			textarea.innerHTML += decode(dataparts[3]);
-			textarea.scrollTop = textarea.scrollHeight;
-			}
-  		};
-	} else {
-		alert("This browser does not support Websockets!");
-	}
+    websock = new WebSocket('ws://{{ipAddress}}:81/');
+    websock.onopen = function(evt) { status.innerHTML = 'Status: Connected.'; };
+    websock.onclose = function(evt) { status.innerHTML = 'Status: Disconnected.'; };
+    websock.onerror = function(evt) { status.innerHTML = 'Status: Error!'; };
+    websock.onmessage = function(evt) {
+        var data = evt.data;
+        var dataparts = data.split(';');
+        document.getElementById('bufferSize').innerHTML = "Buffer Size: " + dataparts[0] + " Kb";
+        document.getElementById('freeRam').innerHTML = "Free Memory: " + dataparts[1] + " Kb";
+        document.getElementById('powerSupply').innerHTML = "Battery: " + dataparts[2] + " V";
+        if (dataparts[3].length){
+      textarea.innerHTML += decode(dataparts[3]);
+      textarea.scrollTop = textarea.scrollHeight;
+      }
+      };
+  } else {
+    alert("This browser does not support Websockets!");
+  }
 }
 
 function decode(str){
 var str, strLen, output, temp, i;
 strLen = str.length;
 output = "";
-	for (i = 0; i < strLen; i++) {
-	temp = str.charAt(i) + str.charAt(++i);
-    		if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
-				output += "&#x" + temp + ";"; 
-    		}else{
-    			output += temp + " ";      
-			}
-	}
+  for (i = 0; i < strLen; i++) {
+  temp = str.charAt(i) + str.charAt(++i);
+        if (document.getElementById("radio").checked || temp=="0a" || temp=="0d") {
+        output += "&#x" + temp + ";"; 
+        }else{
+          output += temp + " ";      
+      }
+  }
 return output;
 }
 
 function websocketsend(data) {
 
-	if (!window.WebSocket)
+  if (!window.WebSocket)
         return;
 
     if (WebSocket.OPEN) {
@@ -237,16 +237,17 @@ function websocketsend(data) {
     } else {
         alert("The socket is not open.");
     }
-	
+  
 }    
 
 function restart() {
-	if (confirm('Unsaved data will be lost! \nSure to restart device?')) {
-		websocketsend('');
-		setTimeout('location.reload()', 5000);
-	}
+  if (confirm('Unsaved data will be lost! \nSure to restart device?')) {
+    websocketsend('');
+    setTimeout('location.reload()', 5000);
+  }
 }
 </script>
 </body>  
 </html>
 )=====";
+

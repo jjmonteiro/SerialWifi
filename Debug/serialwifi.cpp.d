@@ -59,6 +59,7 @@ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\seri
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/debug.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\variants\generic/pins_arduino.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\variants\generic/common.h \
+ C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/ESP8266WebServer.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/ESP8266WiFi.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/include/wl_definitions.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\cores\esp8266/IPAddress.h \
@@ -79,10 +80,9 @@ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\seri
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/WiFiServerSecure.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/WiFiClientSecure.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WiFi\src/include/ssl.h \
- C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/ESP8266WebServer.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\ESP8266WebServer\src/detail/RequestHandler.h \
  C:\Users\quimm\Documents\Arduino\libraries\arduinoWebSockets-master\src/WebSocketsServer.h \
  C:\Users\quimm\Documents\Arduino\libraries\arduinoWebSockets-master\src/WebSockets.h \
  C:\Users\quimm\AppData\Local\arduino15\packages\esp8266\hardware\esp8266\2.4.1\libraries\EEPROM/EEPROM.h \
- C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\webpage.h \
+ C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\WEBPAGE.h \
  C:\Users\quimm\AppData\Local\Temp\VMBuilds\serialwifi\esp8266_generic\Debug\FIFO.h

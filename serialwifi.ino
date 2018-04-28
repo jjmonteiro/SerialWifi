@@ -1,14 +1,11 @@
 /*****************************************************************************/
 /*	Serial Debugger over Wifi - UP840126 - University of Portsmouth
-/*  EEPROM implementation test
 /*****************************************************************************/
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <WebSocketsServer.h>
 #include <EEPROM.h>
-#include "webpage.h"
+#include "WEBPAGE.h"
 #include "FIFO.h"
 
 
@@ -24,7 +21,7 @@ String dataFormatRadio;
 MemoryBuffer dataBuffer;
 
 ADC_MODE(ADC_VCC);									//needed to return voltage reading from ESP
-ESP8266WebServer server(80);						//webserver default port
+ESP8266WebServer webServer(80);						//webserver default port
 WebSocketsServer webSocket = WebSocketsServer(81);  //websocket default port
 
 void handleRoot() {
@@ -38,17 +35,17 @@ void handleRoot() {
 	Index.replace("{{" + baudRateOption + "}}", "selected");
 	Index.replace("{{" + dataFormatRadio + "}}", "checked");
 
-	server.sendHeader("Content-Length", String(Index.length()));
-	server.send(200, "text/html", Index);
+	webServer.sendHeader("Content-Length", String(Index.length()));
+	webServer.send(200, "text/html", Index);
 	Serial.println("Request sent!");
 }
 
 void handleNotFound() {
 	Serial.println("Handling request: Not found");
-	server.send(404, "text/plain", "404: Not found");
+	webServer.send(404, "text/plain", "404: Not found");
 }
 
-void EEPROM_SAVE(size_t BankNumber, String NewData) {
+void EEPROM_WRITE(size_t BankNumber, String NewData) {
 
 	BankNumber *= ROM_BANK_SIZE;
 	char Data[ROM_BANK_SIZE];
@@ -56,8 +53,6 @@ void EEPROM_SAVE(size_t BankNumber, String NewData) {
 
 	for (size_t i = 0; i < ROM_BANK_SIZE; i++) {
 		EEPROM.write(BankNumber + i, Data[i]);
-		//Serial.print(char(Data[i]));
-
 		if (Data[i] == 0) break;
 	}
 
@@ -71,8 +66,6 @@ String EEPROM_READ(size_t BankNumber) {
 
 	for (size_t i = 0; i < ROM_BANK_SIZE; i++) {
 		Data[i] = EEPROM.read(BankNumber + i);
-		//Serial.print(char(Data[i]));
-
 		if (Data[i] == 0) break;
 	}
 
@@ -136,7 +129,7 @@ void sendWebSocketTextString(String NewData) {
 	}
 }
 
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) { //handle incoming data from the websocket
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) { //handle incoming data from the websocket
 
 	if (type == WStype_TEXT){
 		if (lenght) {
@@ -152,26 +145,25 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 			setSerialBaudrate(baudRateOption);//refresh new baudrate
 
 			//save values to EEPROM;
-			EEPROM_SAVE(2, faultCommand);
-			EEPROM_SAVE(3, baudRateOption);
-			EEPROM_SAVE(4, dataFormatRadio);
-			EEPROM_SAVE(0, "ROM_OK");
+			EEPROM_WRITE(2, faultCommand);
+			EEPROM_WRITE(3, baudRateOption);
+			EEPROM_WRITE(4, dataFormatRadio);
+			EEPROM_WRITE(0, "ROM_OK");
 
 			Serial.println("Done saving. New data reloaded.");
 		}
 		else {
 			Serial.println("Restarting..");
 			webSocket.disconnect();
-			server.close();
+			webServer.close();
 			ESP.reset();
 		}
 	}
 }
 
 String PtrToString(uint8_t *str) {
-	byte *p;
 	String result;
-	p = str;
+	byte *p = str;
 	while (*p) {
 		result += char(*p);
 		p++;
@@ -223,10 +215,10 @@ void setup(void) {
 	
 	ConnectWiFi();
 
-	server.on("/", HTTP_GET, handleRoot);  // when client requests webpage
-	server.onNotFound(handleNotFound);     // When client requests an unknown webpage
+	webServer.on("/", HTTP_GET, handleRoot);  // when client requests webpage
+	webServer.onNotFound(handleNotFound);     // When client requests an unknown webpage
 
-	server.begin();
+	webServer.begin();
 	Serial.println("HTTP server started.");
 
 	webSocket.begin();
@@ -236,25 +228,30 @@ void setup(void) {
 }
 
 void ConnectWiFi() {
-	Serial.println("Attempting WiFi connection..");
+	Serial.println("Connecting WiFi..");
 	WiFi.hostname(hostName);
 
 	Serial.println("Attempting last known credentials..");
 	WiFi.begin();	//try last known credentials
-
-	for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 20); attempt++) {
-		delay(500);
-		Serial.print(".");
-	}
-
-	if (WiFi.status() != WL_CONNECTED) {
-		Serial.println("Failed.");
-		Serial.println("Attempting WPS connection..");
-		WiFi.beginWPSConfig();
-		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 20); attempt++) {
+	
+	if (WiFi.status() != WL_CONNECTED) {	//attempt #1
+		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 10); attempt++) {
 			delay(500);
 			Serial.print(".");
 		}
+	}
+
+	if (WiFi.status() != WL_CONNECTED) {	//attempt #2
+		Serial.println("Failed.");
+		Serial.println("Attempting WPS connection..");
+		WiFi.beginWPSConfig();
+		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 120); attempt++) {
+			delay(4000);
+			Serial.print(".");
+		}
+	}
+
+	if (WiFi.status() != WL_CONNECTED) {	//give up
 		Serial.println("Failed. Restarting..");
 		ESP.restart();
 	}
@@ -271,7 +268,7 @@ void loop(void) {
 	size_t loopcounter = 0;
 
 	while (true) {
-		server.handleClient();
+		webServer.handleClient();
 		webSocket.loop();
 
 		if (loopcounter > 10000) { //update values ~200ms
