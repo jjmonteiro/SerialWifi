@@ -9,15 +9,17 @@
 #include "FIFO.h"
 
 
-static const size_t  KB	= 1024;				//1Kb = 1024bits
+static const size_t  KB = 1024;				//1Kb = 1024bits
 static const size_t  EEPROM_SIZE = 300;		//Max available size for the EEPROM data
 static const size_t  ROM_BANK_SIZE = 30;	//size of each memory bank (10 banks: 0-9) 
 
-static const char*  hostName	  = "serialwifi";
+static const char*  hostName = "serialwifi";
 
 String faultCommand;
 String baudRateOption;
 String dataFormatRadio;
+String ssid;
+String psk;
 MemoryBuffer dataBuffer;
 
 ADC_MODE(ADC_VCC);									//needed to return voltage reading from ESP
@@ -75,15 +77,15 @@ String EEPROM_READ(size_t BankNumber) {
 boolean romIsEmpty() {
 	if (EEPROM_READ(0) == "ROM_OK") {
 		return false;
-		}
+	}
 	else {
 		return true;
-		}
+	}
 }
 
 void setSerialBaudrate(String option) {
 
-	option.remove(0,6);				//remove text part of the string e.g.'option'
+	option.remove(0, 6);				//remove text part of the string e.g.'option'
 	size_t baud = option.toInt();	//and convert the remaining number to an integer 
 
 	switch (baud)
@@ -131,7 +133,7 @@ void sendWebSocketTextString(String NewData) {
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght) { //handle incoming data from the websocket
 
-	if (type == WStype_TEXT){
+	if (type == WStype_TEXT) {
 		if (lenght) {
 			Serial.println("Saving server data..");
 
@@ -144,7 +146,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
 			setSerialBaudrate(baudRateOption);//refresh new baudrate
 
-			//save values to EEPROM;
+											  //save values to EEPROM;
 			EEPROM_WRITE(2, faultCommand);
 			EEPROM_WRITE(3, baudRateOption);
 			EEPROM_WRITE(4, dataFormatRadio);
@@ -172,7 +174,7 @@ String PtrToString(uint8_t *str) {
 }
 
 String extractField(String data, uint8_t field) {
-	
+
 	uint8_t i = 0;
 	String result = "";
 
@@ -197,22 +199,24 @@ void setup(void) {
 	EEPROM.begin(EEPROM_SIZE);
 	Serial.print("Eeprom Conf. Size: ");
 	Serial.println(EEPROM_SIZE);
-	
 
-	if (romIsEmpty()){
+
+	if (romIsEmpty()) {
 		Serial.println("Rom Empty.");	//zero all variables
 		faultCommand = "";
 		baudRateOption = "";
 		dataFormatRadio = "";
 	}
-		else{
+	else {
 		Serial.println("Rom not Empty.");//populate variables with each memory bank data
 		faultCommand = EEPROM_READ(2);
 		baudRateOption = EEPROM_READ(3);
 		dataFormatRadio = EEPROM_READ(4);
+		ssid = EEPROM_READ(8);
+		psk = EEPROM_READ(9);
 		setSerialBaudrate(baudRateOption);//refresh new baudrate
 	}
-	
+
 	ConnectWiFi();
 
 	webServer.on("/", HTTP_GET, handleRoot);  // when client requests webpage
@@ -232,11 +236,11 @@ void ConnectWiFi() {
 	WiFi.hostname(hostName);
 
 	Serial.println("Attempting last known credentials..");
-	WiFi.begin();	//try last known credentials
-	
+	WiFi.begin(ssid.c_str(), psk.c_str());	//try last known credentials
+
 	if (WiFi.status() != WL_CONNECTED) {	//attempt #1
 		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 10); attempt++) {
-			delay(500);
+			delay(1000);
 			Serial.print(".");
 		}
 	}
@@ -258,6 +262,8 @@ void ConnectWiFi() {
 
 	Serial.println();
 	Serial.println("Connected!");
+	EEPROM_WRITE(8, String(WiFi.SSID()));
+	EEPROM_WRITE(9, String(WiFi.psk()));
 	Serial.println(WiFi.localIP());
 	Serial.println(WiFi.SSID());
 	Serial.println(WiFi.macAddress());
@@ -293,7 +299,7 @@ void loop(void) {
 			else {
 				sendWebSocketTextString(tempBuffer);
 			}
-		yield();
+			yield();
 		}
 		loopcounter++;
 	}

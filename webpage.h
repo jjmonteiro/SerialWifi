@@ -161,7 +161,7 @@ select:active {border: 2px solid #ccc}
   <br>
   <input class='textbox border button' type='submit' name='click0' value='Save' onclick="websocketsend(text2.value + ';' + option.value + ';' + radio.value);alert('Configurations Saved.')">
   <input class='textbox border button' type='button' name='click1' value='Restart' onclick='restart()' >
-    <input class='textbox border button' type='button' name='click2' value='Clear' onclick="document.getElementById('dataBuffer').innerHTML = ''">
+  <input class='textbox border button' type='button' name='click2' value='Clear' onclick="if (confirm('Unsaved data will be lost! \nSure to clear screen?')) {document.getElementById('dataBuffer').innerHTML = ''}">
 </form>
 </nav>
 

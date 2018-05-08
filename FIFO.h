@@ -5,7 +5,7 @@
 #ifndef FIFO_H
 #define FIFO_H
 
-static const size_t  BUFFER_SIZE = 4000;      //Bytes (x2 + 4K < 20KB)
+static const size_t  BUFFER_SIZE = (4 * 1024);      //Bytes (x2 + 4K < 20KB)
 
 struct MemoryBuffer
 {
