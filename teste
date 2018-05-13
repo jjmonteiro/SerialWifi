@@ -1,0 +1,32 @@
+for i 1 1000
+	sendln "#------ Log Start -----"
+	gettime s "%Y/%m/%d %H:%M:%S "
+	send "uptime: "
+	sendln s
+
+	sendln "cat /etc/passwd"
+	sendln
+
+	for a 1 10
+	send s
+	random val 100
+	int2str valstr val
+	crc32 crc valstr 
+	sprintf '0x%08X' crc
+	sendln inputstr
+	next
+	
+	random val 5
+	if val=1 then
+		sendln "---FAULT---"
+	endif
+
+	sendln
+	sendln "#------ Log End -----"
+	sendln
+	sendln
+	pause 3
+next
+
+sendln "#----- Macro Finish -----"
+end
