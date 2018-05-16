@@ -262,15 +262,18 @@ void ConnectWiFi() {
 	if (WiFi.status() != WL_CONNECTED) {	//give up
 		Serial.println("Failed. Restart? y/n");
 		while (true) {
+
 			if (Serial.read() == 'n') {
 				ssid = "";
 				psk = "";
 				Serial.println("Enter ssid: ");
-					while (ssid = "")
+					while (ssid == "")
 					ssid = Serial.readStringUntil('\n');
-				Serial.print("Enter psk: ");
-					while (psk = "")
+					Serial.println(ssid);
+				Serial.println("Enter psk: ");
+					while (psk == "")
 					psk = Serial.readStringUntil('\n');
+					Serial.println(psk);
 
 				EEPROM_WRITE(8, ssid);
 				EEPROM_WRITE(9, psk);
@@ -295,6 +298,7 @@ void ConnectWiFi() {
 void loop(void) {
 
 	size_t loopcounter = 0;
+	String tempBuffer;
 
 	while (true) {
 		webServer.handleClient();
@@ -305,9 +309,9 @@ void loop(void) {
 			loopcounter = 0;
 		}
 
-		while (Serial.available()) {
+		//while (Serial.available()) {
 
-			String tempBuffer = Serial.readStringUntil('\n');
+			tempBuffer = Serial.readStringUntil('\n');
 
 			if (faultCommand) {
 				dataBuffer.WriteStringToBuffer(tempBuffer);
@@ -322,8 +326,9 @@ void loop(void) {
 			else {
 				sendWebSocketTextString(tempBuffer);
 			}
-			yield();
-		}
+
+			tempBuffer = "";
+		//}
 		loopcounter++;
 	}
 }
