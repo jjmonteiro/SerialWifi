@@ -242,6 +242,8 @@ void ConnectWiFi() {
 		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 10); attempt++) {
 			delay(1000);
 			Serial.print(".");
+			if (Serial.read() == 'c')
+				break;
 		}
 	}
 
@@ -249,15 +251,36 @@ void ConnectWiFi() {
 		Serial.println("Failed.");
 		Serial.println("Attempting WPS connection..");
 		WiFi.beginWPSConfig();
-		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 120); attempt++) {
+		for (size_t attempt = 0; (WiFi.status() != WL_CONNECTED && attempt < 10); attempt++) {
 			delay(4000);
 			Serial.print(".");
+			if (Serial.read() == 'c')
+				break;
 		}
 	}
 
 	if (WiFi.status() != WL_CONNECTED) {	//give up
-		Serial.println("Failed. Restarting..");
-		ESP.restart();
+		Serial.println("Failed. Restart? y/n");
+		while (true) {
+			if (Serial.read() == 'n') {
+				ssid = "";
+				psk = "";
+				Serial.println("Enter ssid: ");
+					while (ssid = "")
+					ssid = Serial.readStringUntil('\n');
+				Serial.print("Enter psk: ");
+					while (psk = "")
+					psk = Serial.readStringUntil('\n');
+
+				EEPROM_WRITE(8, ssid);
+				EEPROM_WRITE(9, psk);
+				ESP.restart();
+			}
+			if (Serial.read() == 'y') {
+				ESP.restart();
+			}
+		delay(100);
+		}
 	}
 
 	Serial.println();
